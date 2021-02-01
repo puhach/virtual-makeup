@@ -19,7 +19,7 @@ public:
 		
 
 	// C.67: A base class should suppress copying, and provide a virtual clone instead if "copying" is desired
-	virtual std::unique_ptr<AbstractImageFilter> clone() const = 0;
+	std::unique_ptr<AbstractImageFilter> clone() const { return createClone(); }
 
 protected:
 	AbstractImageFilter() = default;
@@ -31,7 +31,10 @@ protected:
 	AbstractImageFilter& operator = (const AbstractImageFilter&) = delete;
 	AbstractImageFilter& operator = (AbstractImageFilter&&) = delete;
 
+private:
 	virtual void applyInPlace(cv::Mat& image) const = 0;	// stores the result into the same matrix as the input
+
+	virtual std::unique_ptr<AbstractImageFilter> createClone() const = 0;
 };	// AbstractImageFilter
 
 
