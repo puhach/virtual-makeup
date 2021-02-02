@@ -16,7 +16,8 @@ public:
 
 	cv::Mat apply(const cv::Mat& image) const;	// always allocates a new matrix to store the output
 	void apply(const cv::Mat& image, cv::Mat& out) const;	// may be useful if the output matrix of the matching type has already been allocated
-		
+	
+	void applyInPlace(cv::Mat& image) const;
 
 	// C.67: A base class should suppress copying, and provide a virtual clone instead if "copying" is desired
 	std::unique_ptr<AbstractImageFilter> clone() const { return createClone(); }
@@ -32,7 +33,7 @@ protected:
 	AbstractImageFilter& operator = (AbstractImageFilter&&) = delete;
 
 private:
-	virtual void applyInPlace(cv::Mat& image) const = 0;	// stores the result into the same matrix as the input
+	virtual void modify(cv::Mat& image) const = 0;	// stores the result into the same matrix as the input
 
 	virtual std::unique_ptr<AbstractImageFilter> createClone() const = 0;
 };	// AbstractImageFilter
