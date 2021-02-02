@@ -13,7 +13,7 @@ std::unique_ptr<AbstractImageFilter> LipstickColorFilter::createClone() const
 }
 
 /*
-void LipstickColorFilter::applyInPlace(cv::Mat& image) const
+void LipstickColorFilter::modify(cv::Mat& image) const
 {
 	CV_Assert(!image.empty());
 
@@ -74,29 +74,32 @@ void LipstickColorFilter::applyInPlace(cv::Mat& image) const
 */
 
 
-void LipstickColorFilter::applyInPlace(cv::Mat& image) const
+void LipstickColorFilter::modify(cv::Mat& image) const
 {
 	CV_Assert(!image.empty());
 
-	//if (this->landmarks.empty())
-	CV_Assert(this->landmarks.size() == 68);
+	auto&& landmarks = grabLandmarks(image);		// obtain or read existing landmarks destructively
+	CV_Assert(landmarks.size() == 68);
 
-	//std::vector<int> outerIndices(12);
-	//std::iota(outerIndices.begin(), );
+
+	// Build the outer and the inner contours of the lips
+
 	static constexpr int outerIndices[] = { 48,49,50,51,52,53,54,55,56,57,58,59 }, innerIndices[] = { 60,61,62,63,64,65,66,67 };
 
 	std::vector<cv::Point> outerPoints;
 	for (auto idx : outerIndices)
 	{
-		outerPoints.push_back(this->landmarks[idx]);
+		outerPoints.push_back(landmarks[idx]);
 	}
 
 	std::vector<cv::Point> innerPoints;
 	for (auto idx : innerIndices)
 	{
-		innerPoints.push_back(this->landmarks[idx]);
+		innerPoints.push_back(landmarks[idx]);
 	}
 
+
+	// Create a mask for the lips region
 
 	cv::Mat mask(image.size(), CV_8UC3, cv::Scalar(0, 0, 0));
 	cv::fillPoly(mask, std::vector<std::vector<cv::Point>>{ outerPoints }, cv::Scalar(255, 255, 255));
@@ -105,10 +108,13 @@ void LipstickColorFilter::applyInPlace(cv::Mat& image) const
 	//cv::imshow("test", mask);
 	//cv::waitKey();
 
-	cv::Mat red(image.size(), CV_8UC3, cv::Scalar(0, 0, 255));
+	// Mix the lips and the lipstick color
+
+	//cv::Mat lipstick(image.size(), CV_8UC3, cv::Scalar(0, 0, 255));
+	cv::Mat lipstick(image.size(), CV_8UC3, this->color);
 	cv::Rect r = cv::boundingRect(outerPoints);
-	cv::Mat lipstick;
-	cv::seamlessClone(image, red, mask, (r.tl() + r.br()) / 2, lipstick, cv::MIXED_CLONE);
+	//cv::Mat lipstick;
+	cv::seamlessClone(image, lipstick, mask, (r.tl() + r.br()) / 2, lipstick, cv::MIXED_CLONE);
 
 	//cv::imshow("lipstick", lipstick);
 	//cv::waitKey();
@@ -119,7 +125,8 @@ void LipstickColorFilter::applyInPlace(cv::Mat& image) const
 	//cv::imshow("test", mask);
 	//cv::waitKey();
 
-	double alpha = 0.5;		// TODO: add it as a parameter
+	//double alpha = 0.4;		// TODO: add it as a parameter
+	double alpha = this->color[3] / 255.0;
 	cv::Mat maskF;
 	mask.convertTo(maskF, CV_32FC1, alpha * 1.0 / 255);
 
@@ -154,50 +161,3 @@ void LipstickColorFilter::applyInPlace(cv::Mat& image) const
 
 
 
-cv::Mat LipstickColorFilter::apply(const cv::Mat& image, const std::vector<cv::Point>& landmarks) const
-{
-	cv::Mat out;
-	apply(image, landmarks, out);
-	return out;
-}
-
-void LipstickColorFilter::apply(const cv::Mat& image, const std::vector<cv::Point>& landmarks, cv::Mat& out) const
-{
-
-	//struct ExistingLandmarksRAII
-	//{
-	//	ExistingLandmarksRAII(const LipstickColorFilter& filter)
-	//		: filter(filter) 
-	//	{
-	//		this->filter.useExistingLandmarks = true;
-	//	}
-
-	//	~ExistingLandmarksRAII()
-	//	{
-	//		this->filter.useExistingLandmarks = false;
-	//	}
-
-	//	const LipstickColorFilter& filter;
-	//} existingLandmarksRAII(*this);
-
-	struct ExistingLandmarksRAII
-	{
-		ExistingLandmarksRAII(bool& useExistingLandmarks)
-			: useExistingLandmarks(useExistingLandmarks)
-		{
-			useExistingLandmarks = true;
-		}
-
-		~ExistingLandmarksRAII()
-		{
-			useExistingLandmarks = false;
-		}
-
-		bool& useExistingLandmarks;
-	} existingLandmarksRAII(this->useExistingLandmarks);
-
-	this->landmarks = landmarks;
-
-	image.copyTo(out);
-	applyInPlace(out);
-}
