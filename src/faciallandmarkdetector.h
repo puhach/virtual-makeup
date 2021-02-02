@@ -15,19 +15,26 @@ class FacialLandmarkDetector : public AbstractLandmarkDetector<std::vector<cv::P
 //class FacialLandmarkDetector : public AbstractLandmarkDetector<Landmarks>
 {
 public:
-	FacialLandmarkDetector(double scalingFactor)
+
+	constexpr FacialLandmarkDetector(double scalingFactor)
 		: scalingFactor(scalingFactor > 0 ? scalingFactor : throw std::invalid_argument("The scaling factor must be positive."))
 		//, path("shape_predictor_68_face_landmarks.dat")
 	{
 	}
 
-	// TODO: define copy/move semantics
+	
+	constexpr double getScalingFactor() const noexcept { return this->scalingFactor; }
 
-	// TODO: add a getter/setter for the scaling factor
+	constexpr void setScalingFactor(double scalingFactor) 
+	{
+		this->scalingFactor = scalingFactor > 0 ? scalingFactor : throw std::invalid_argument("The scaling factor must be positive.");
+	}
 
 protected:
+	// TODO: define copy/move semantics
 
 private:
+
 	virtual std::unique_ptr<AbstractLandmarkDetector<std::vector<cv::Point>>> createClone() const override;
 	//virtual std::unique_ptr<AbstractLandmarkDetector<Landmarks>> createClone() const override;
 
