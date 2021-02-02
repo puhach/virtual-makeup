@@ -4,21 +4,15 @@
 #include "abstractlandmarkdetector.h"
 
 #include <opencv2/core.hpp>
-#include <opencv2/imgproc.hpp>
-
-#include <dlib/opencv.h>
-#include <dlib/image_processing.h>
-#include <dlib/image_processing/frontal_face_detector.h>
 
 #include <string>
 #include <stdexcept>
 #include <vector>
 
-// TODO: perhaps, there is no need to make it a template since we implement only std::vector<cv::Point> version
 
-template <typename Landmarks>
-//class FacialLandmarkDetector : public AbstractLandmarkDetector<std::vector<cv::Point>>
-class FacialLandmarkDetector : public AbstractLandmarkDetector<Landmarks>
+//template <typename Landmarks>
+class FacialLandmarkDetector : public AbstractLandmarkDetector<std::vector<cv::Point>>
+//class FacialLandmarkDetector : public AbstractLandmarkDetector<Landmarks>
 {
 public:
 	FacialLandmarkDetector(double scalingFactor)
@@ -34,17 +28,17 @@ public:
 protected:
 
 private:
-	//virtual std::unique_ptr<AbstractLandmarkDetector<std::vector<cv::Point>>> createClone() const override;
-	virtual std::unique_ptr<AbstractLandmarkDetector<Landmarks>> createClone() const override;
+	virtual std::unique_ptr<AbstractLandmarkDetector<std::vector<cv::Point>>> createClone() const override;
+	//virtual std::unique_ptr<AbstractLandmarkDetector<Landmarks>> createClone() const override;
 
-	//virtual std::vector<cv::Point> detectLandmarks(const cv::Mat& image) const override;
-	virtual Landmarks detectLandmarks(const cv::Mat& image) const override;
+	virtual std::vector<cv::Point> detectLandmarks(const cv::Mat& image) const override;
+	//virtual Landmarks detectLandmarks(const cv::Mat& image) const override;
 
 	double scalingFactor = 1.0;
 	static inline const std::string modelPath = "shape_predictor_68_face_landmarks.dat";
 };	// FacialLandmarkDetector
 
-
+/*
 template <typename Landmarks>
 std::unique_ptr<AbstractLandmarkDetector<Landmarks>> FacialLandmarkDetector<Landmarks>::createClone() const 
 {
@@ -100,5 +94,6 @@ inline std::vector<cv::Point> FacialLandmarkDetector<std::vector<cv::Point>>::de
 
 	return landmarks;
 }	// detectLandmarks
+*/
 
 #endif	// FACIALLANDMARKDETECTOR_H
