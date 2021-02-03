@@ -13,27 +13,31 @@
 class FacialLandmarkFilter : public AbstractImageFilter
 {
 public:
+
+	// The following overloads allow a user to provide existing facial landmarks and avoid new detection
+
 	cv::Mat apply(const cv::Mat& image, const std::vector<cv::Point>& landmarks) const;
-
 	cv::Mat apply(const cv::Mat& image, std::vector<cv::Point>&& landmarks) const;
-
 	void apply(const cv::Mat& image, const std::vector<cv::Point>& landmarks, cv::Mat& out) const;
-
 	void apply(const cv::Mat& image, std::vector<cv::Point>&& landmarks, cv::Mat& out) const;
-
 	void applyInPlace(cv::Mat& image, const std::vector<cv::Point>& landmarks) const;
-
 	void applyInPlace(cv::Mat& image, std::vector<cv::Point>&& landmarks) const;
 
-	// prevent hiding inherited overloads of apply() and applyInPlace()
+	// Prevent hiding inherited overloads of apply() and applyInPlace()
 	using AbstractImageFilter::apply;	
 	using AbstractImageFilter::applyInPlace;
 
 protected:
-	FacialLandmarkFilter(std::shared_ptr<FacialLandmarkDetector> landmarkDetector)
-		: landmarkDetector(landmarkDetector) {}
 
-	// TODO: define copy/move semantics
+	FacialLandmarkFilter(std::shared_ptr<FacialLandmarkDetector> landmarkDetector) noexcept
+		: landmarkDetector(std::move(landmarkDetector)) {}
+
+	FacialLandmarkFilter() = default;
+	FacialLandmarkFilter(const FacialLandmarkFilter&) = default;
+	FacialLandmarkFilter(FacialLandmarkFilter&&) = default;
+
+	FacialLandmarkFilter& operator = (const FacialLandmarkFilter&) = delete;
+	FacialLandmarkFilter& operator = (FacialLandmarkFilter&&) = delete;
 
 	// This function destructively reads existing landmark vector. In case there are no landmarks provided, they will be detected.
 	// It is guaranteed that the member landmark vector will be left empty even if an exception is thrown.
