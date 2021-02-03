@@ -14,15 +14,14 @@
 class LipstickColorFilter : public FacialLandmarkFilter
 {
 public:
-	LipstickColorFilter(std::shared_ptr<FacialLandmarkDetector> landmarkDetector)
+	LipstickColorFilter(std::shared_ptr<FacialLandmarkDetector> landmarkDetector) noexcept
 		: FacialLandmarkFilter(std::move(landmarkDetector)) {}
 
-	// TODO: define copy/move semantics
 
 	// cv::Scalar's copy constructor is not noexcept
 	cv::Scalar getColor() const /*noexcept*/ { return this->color; }
 
-	void setColor(const cv::Scalar& rgba) { this->color = rgba; }
+	void setColor(const cv::Scalar& color) { this->color = color; }
 
 	//void setLandmarks(const std::vector<cv::Point>& landmarks) { this->landmarks = landmarks; }
 	//void setLandmarks(std::vector<cv::Point>&& landmarks) { this->landmarks = std::move(landmarks); }
@@ -33,6 +32,15 @@ public:
 
 	//// Prevent new apply() overloads from hiding inherited ones
 	//using AbstractImageFilter::apply;
+
+protected:
+
+	LipstickColorFilter() = default;
+	LipstickColorFilter(const LipstickColorFilter&) = default;
+	LipstickColorFilter(LipstickColorFilter&&) = default;
+
+	LipstickColorFilter& operator = (const LipstickColorFilter&) = delete;
+	LipstickColorFilter& operator = (LipstickColorFilter&&) = delete;
 
 private:
 
