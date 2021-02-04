@@ -35,7 +35,8 @@ private:
 
 	//int detectIris(const cv::Mat& image, cv::Point &center, int minRadius, int maxRadius) const;
 
-	cv::Scalar color{ 255, 0, 0, 100 };
+	//cv::Scalar color{ 30, 30, 50, 200 };
+	cv::Scalar color{ 100, 80, 30, 250 };
 };	// EyeColorFilter
 
 #endif	// EYECOLORFILTER_H
