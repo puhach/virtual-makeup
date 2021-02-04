@@ -27,13 +27,13 @@ private:
 	virtual void modify(cv::Mat& image) const override;
 
 	void createIrisMask(const cv::Mat1b& imageGray, const std::vector<cv::Point> &eyeContour, 
-		int minRadius, int maxRadius, cv::Mat1b& irisMask, cv::Point &center) const;
+		int minRadius, int maxRadius, cv::Point &center, cv::Mat1b& irisMask) const;
 
-	void changeIrisColor(cv::Mat3b& image, const cv::Mat1b& irisMask, const cv::Point& irisCenter) const;
+	void changeIrisColor_Overlaying(cv::Mat3b& image, const cv::Mat1b& irisMask, const cv::Point& irisCenter, bool blur) const;
 
 
-	void changeIrisColorPixelwise(cv::Mat3b& image, const cv::Mat1b& hueChannel, const std::vector<cv::Point>& eyeContour, 
-		const cv::Point &center, int minRadius, int maxRadius) const;	// TEST!
+	void changeIrisColor_Pixelwise(cv::Mat3b& image, const cv::Mat1b& hueChannel, const std::vector<cv::Point>& eyeContour, 
+		const cv::Point &center, int minRadius, int maxRadius) const;	
 
 	//int detectIris(const cv::Mat& image, cv::Point &center, int minRadius, int maxRadius) const;
 
@@ -41,6 +41,11 @@ private:
 	//cv::Scalar color{ 72, 114, 75, 200 };
 	//cv::Scalar color{ 100, 80, 30, 150 };
 	//cv::Scalar color{ 2, 25, 46, 250 };
+
+	// Memory buffers
+	mutable cv::Mat1b eyeMask;
+	mutable cv::Mat3b iris;
+	mutable cv::Mat3f irisMaskF, inputF, irisF;
 };	// EyeColorFilter
 
 #endif	// EYECOLORFILTER_H
