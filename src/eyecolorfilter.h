@@ -31,12 +31,16 @@ private:
 
 	void changeIrisColor(cv::Mat3b& image, const cv::Mat1b& irisMask, const cv::Point& irisCenter) const;
 
-	//void changeEyeColor(cv::Mat& image, const std::vector<cv::Point>& eyeContour) const;
+
+	void changeIrisColorPixelwise(cv::Mat3b& image, const cv::Mat1b& hueChannel, const std::vector<cv::Point>& eyeContour, 
+		const cv::Point &center, int minRadius, int maxRadius) const;	// TEST!
 
 	//int detectIris(const cv::Mat& image, cv::Point &center, int minRadius, int maxRadius) const;
 
-	//cv::Scalar color{ 30, 30, 50, 200 };
-	cv::Scalar color{ 100, 80, 30, 250 };
+	cv::Scalar color{ 55, 163, 55, 100 };
+	//cv::Scalar color{ 72, 114, 75, 200 };
+	//cv::Scalar color{ 100, 80, 30, 150 };
+	//cv::Scalar color{ 2, 25, 46, 250 };
 };	// EyeColorFilter
 
 #endif	// EYECOLORFILTER_H
