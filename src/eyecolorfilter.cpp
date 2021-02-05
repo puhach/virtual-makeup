@@ -210,37 +210,53 @@ void EyeColorFilter::createIrisMask(const std::vector<cv::Mat1b>& hsvChannels, c
 		//cv::waitKey();
 
 		std::vector<cv::Vec3f> circles;
-		//cv::HoughCircles(eyeGray, circles, cv::HOUGH_GRADIENT, 1, 1, 100, 5, minRadius, maxRadius);
-		//cv::HoughCircles(eyeGray, circles, cv::HOUGH_GRADIENT, 1, 1, 100, 5, minRadius, minRadius + 0.7*(maxRadius-minRadius));	// TEST!
-		//cv::HoughCircles(eyeGray, circles, cv::HOUGH_GRADIENT, 1, 1, 300, 5, minRadius, maxRadius);
-		//cv::HoughCircles(eyeGray, circles, cv::HOUGH_GRADIENT, 1, 1, 240, 5, minRadius, maxRadius);
-		//cv::HoughCircles(eyeGray, circles, cv::HOUGH_GRADIENT, 1, 1, 270, 5, minRadius, maxRadius);
-		//cv::HoughCircles(eyeGray, circles, cv::HOUGH_GRADIENT, 1, 1, 293, 5, minRadius, maxRadius);
-		cv::HoughCircles(eyeGray, circles, cv::HOUGH_GRADIENT, 1, 1, 292, 5, minRadius, maxRadius);
-		//cv::HoughCircles(eyeGray, circles, cv::HOUGH_GRADIENT, 1, 1, 300, 4, minRadius, maxRadius);
-
-		// TEST!
-		cv::Mat imcircles;
-		cv::merge(std::vector<cv::Mat>{channel, channel, channel}, imcircles);
-		//cv::fillConvexPoly(imcircles, eyeContour, cv::Scalar(255, 255, 255));
-		for (const auto& circle : circles)
+		for (int threshold = 300; threshold > 100; threshold -= 10)
 		{
-			cv::circle(imcircles, cv::Point(circle[0], circle[1]), circle[2], cv::Scalar(0, 255, 0), 1);
-			//cv::circle(imcircles, cv::Point(circle[0], circle[1]), 1, cv::Scalar(255,0,0), -1);
-		}
-		///cv::imwrite("z:/circles.jpg", imcircles);
-		cv::imshow("circles " + std::to_string(t++), imcircles);
-		cv::waitKey();
+			//cv::HoughCircles(eyeGray, circles, cv::HOUGH_GRADIENT, 1, 1, 100, 5, minRadius, maxRadius);
+			//cv::HoughCircles(eyeGray, circles, cv::HOUGH_GRADIENT, 1, 1, 100, 5, minRadius, minRadius + 0.7*(maxRadius-minRadius));	// TEST!
+			//cv::HoughCircles(eyeGray, circles, cv::HOUGH_GRADIENT, 1, 1, 300, 5, minRadius, maxRadius);
+			//cv::HoughCircles(eyeGray, circles, cv::HOUGH_GRADIENT, 1, 1, 240, 5, minRadius, maxRadius);
+			//cv::HoughCircles(eyeGray, circles, cv::HOUGH_GRADIENT, 1, 1, 270, 5, minRadius, maxRadius);
+			//cv::HoughCircles(eyeGray, circles, cv::HOUGH_GRADIENT, 1, 1, 293, 5, minRadius, maxRadius);
+			//cv::HoughCircles(eyeGray, circles, cv::HOUGH_GRADIENT, 1, 1, 292, 5, minRadius, maxRadius);	// !
+			//cv::HoughCircles(eyeGray, circles, cv::HOUGH_GRADIENT, 1, 1, 300, 4, minRadius, maxRadius);
 
-		std::move(circles.begin(), circles.end(), std::back_inserter(allCircles));
+			cv::HoughCircles(eyeGray, circles, cv::HOUGH_GRADIENT, 1, 1, threshold, 5, minRadius, maxRadius);
+			// Filter the circles: the iris center must lie within the eye contour
+			auto last = std::remove_if(circles.begin(), circles.end(), [&eyeContour](const auto& circle)
+				{
+					return cv::pointPolygonTest(eyeContour, cv::Point2f(circle[0], circle[1]), false) < 0;
+				});
+			//allCircles.erase(last, allCircles.end());
+			if (last != circles.begin())	// not empty vector
+			{
+				// TEST!
+				cv::Mat imcircles;
+				cv::merge(std::vector<cv::Mat>{channel, channel, channel}, imcircles);
+				//cv::fillConvexPoly(imcircles, eyeContour, cv::Scalar(255, 255, 255));
+				for (const auto& circle : circles)
+				{
+					cv::circle(imcircles, cv::Point(circle[0], circle[1]), circle[2], cv::Scalar(0, 255, 0), 1);
+					//cv::circle(imcircles, cv::Point(circle[0], circle[1]), 1, cv::Scalar(255,0,0), -1);
+				}
+				///cv::imwrite("z:/circles.jpg", imcircles);
+				cv::imshow("circles " + std::to_string(t++), imcircles);
+				cv::waitKey();
+
+				std::move(circles.begin(), last, std::back_inserter(allCircles));
+				break;
+			}	// not empty 					
+
+		}	// for threshold
+		
 	}	// for channels
 
-	// Filter the circles: the iris center must lie within the eye contour
-	auto last = std::remove_if(allCircles.begin(), allCircles.end(), [&eyeContour](const auto& circle)
-		{
-			return cv::pointPolygonTest(eyeContour, cv::Point2f(circle[0], circle[1]), false) < 0;
-		});
-	allCircles.erase(last, allCircles.end());
+	//// Filter the circles: the iris center must lie within the eye contour
+	//auto last = std::remove_if(allCircles.begin(), allCircles.end(), [&eyeContour](const auto& circle)
+	//	{
+	//		return cv::pointPolygonTest(eyeContour, cv::Point2f(circle[0], circle[1]), false) < 0;
+	//	});
+	//allCircles.erase(last, allCircles.end());
 
 	// TEST!
 	cv::Mat imcircles;
