@@ -26,8 +26,11 @@ private:
 
 	virtual void modify(cv::Mat& image) const override;
 
-	void createIrisMask(const cv::Mat1b& imageGray, const std::vector<cv::Point> &eyeContour, 
-		int minRadius, int maxRadius, cv::Point &center, cv::Mat1b& irisMask) const;
+	//void createIrisMask(const cv::Mat1b& imageGray, const std::vector<cv::Point> &eyeContour, 
+	//	int minRadius, int maxRadius, cv::Point &center, cv::Mat1b& irisMask) const;
+
+	void createIrisMask(const std::vector<cv::Mat1b>& hsvChannels, const std::vector<cv::Point>& eyeContour,
+		int minRadius, int maxRadius, cv::Point& center, cv::Mat1b& irisMask) const;
 
 	void changeIrisColor_Overlaying(cv::Mat3b& image, const cv::Mat1b& irisMask, const cv::Point& irisCenter, bool blur) const;
 
@@ -42,8 +45,8 @@ private:
 	//cv::Scalar color{ 100, 80, 30, 150 };
 	//cv::Scalar color{ 2, 25, 46, 250 };
 
-	// Memory buffers
-	mutable cv::Mat1b eyeMask;
+	// TODO: do we really need these memory buffers
+	mutable cv::Mat1b eyeMask, eyeGray;
 	mutable cv::Mat3b iris;
 	mutable cv::Mat3f irisMaskF, inputF, irisF;
 };	// EyeColorFilter
