@@ -38,7 +38,7 @@ private:
 	//int detectIris(const cv::Mat& image, cv::Point &center, int minRadius, int maxRadius) const;
 
 	cv::Scalar color{ 55, 163, 55, 100 };
-	//cv::Scalar color{ 72, 114, 75, 200 };
+	//cv::Scalar color{ 72, 114, 75, 130 };
 	//cv::Scalar color{ 100, 80, 30, 150 };
 	//cv::Scalar color{ 2, 25, 46, 250 };
 
