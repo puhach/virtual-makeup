@@ -45,10 +45,10 @@ private:
 	//cv::Scalar color{ 100, 80, 30, 150 };
 	//cv::Scalar color{ 2, 25, 46, 250 };
 
-	// TODO: do we really need these memory buffers
-	mutable cv::Mat1b eyeMask, eyeGray;
-	mutable cv::Mat3b iris;
-	mutable cv::Mat3f irisMaskF, inputF, irisF;
+	// do we really need these memory buffers
+	//mutable cv::Mat1b eyeMask, eyeGray;
+	//mutable cv::Mat3b iris;
+	//mutable cv::Mat3f irisMaskF, inputF, irisF;
 };	// EyeColorFilter
 
 #endif	// EYECOLORFILTER_H
