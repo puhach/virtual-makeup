@@ -186,17 +186,18 @@ void EyeColorFilter::createIrisMask(const std::vector<cv::Mat1b>& hsvChannels, c
 
 	cv::Mat1b eyeGray(eyeMask.size());
 	std::vector<cv::Vec3f> allCircles;
+	std::vector<cv::Vec3f> circles;
 	for (const auto& channel : hsvChannels)
 	{
 		//this->eyeGray.create(channel.size());	// allocate a new matrix if needed
 		eyeGray.setTo(0);	// clear the mask
 		channel.copyTo(eyeGray, eyeMaskDilated);
+		//cv::GaussianBlur(eyeGray, eyeGray, cv::Size(7, 7), 1.5, 1.5);	// TEST!
 
-		// TEST!
+		/// TEST!
 		//cv::imshow("eye gray", eyeGray);
 		//cv::waitKey();
 
-		std::vector<cv::Vec3f> circles;
 		for (int threshold = 400; threshold > 50; threshold -= 10)
 		{
 			//cv::HoughCircles(eyeGray, circles, cv::HOUGH_GRADIENT, 1, 1, 100, 5, minRadius, maxRadius);
@@ -207,10 +208,11 @@ void EyeColorFilter::createIrisMask(const std::vector<cv::Mat1b>& hsvChannels, c
 			//cv::HoughCircles(eyeGray, circles, cv::HOUGH_GRADIENT, 1, 1, 293, 5, minRadius, maxRadius);
 			//cv::HoughCircles(eyeGray, circles, cv::HOUGH_GRADIENT, 1, 1, 292, 5, minRadius, maxRadius);	// !
 			//cv::HoughCircles(eyeGray, circles, cv::HOUGH_GRADIENT, 1, 1, 300, 4, minRadius, maxRadius);
-
+			circles.clear();
+			// TODO: try HOUGH_GRADIENT_ALT (requires opencv 4.4)
 			cv::HoughCircles(eyeGray, circles, cv::HOUGH_GRADIENT, 1, 1, threshold, 5, minRadius, maxRadius);
-			//cv::HoughCircles(eyeGray, circles, cv::HOUGH_GRADIENT, 1, 1, threshold, 3, minRadius, maxRadius);	// TEST!
-
+			//cv::HoughCircles(eyeGray, circles, cv::HOUGH_GRADIENT, 1.5, 1, threshold, 5, minRadius, maxRadius);
+			
 			// Filter the circles: the iris center must lie within the eye contour
 			auto last = std::remove_if(std::execution::par_unseq, circles.begin(), circles.end(), 
 						[&eyeContour](const auto& circle)
