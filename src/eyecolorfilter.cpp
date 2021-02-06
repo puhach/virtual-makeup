@@ -41,7 +41,7 @@ void EyeColorFilter::modify(cv::Mat& image) const
 		center /= static_cast<int>(indices.size());
 
 		std::tie(minRadius, maxRadius) = std::accumulate(indices.begin(), indices.end(), std::pair<int, int>(std::numeric_limits<int>::max(), 0), 
-			[&landmarks, &center](const std::pair<int, int>& p, int index) 
+			[&landmarks, &center](const std::pair<int, int>& p, std::size_t index) 
 			{
 				return std::make_pair( std::min(p.first, static_cast<int>(cv::norm(landmarks[index]-center))), 
 										std::max(p.second, static_cast<int>(cv::norm(landmarks[index]-center))) );
@@ -152,9 +152,12 @@ void EyeColorFilter::changeIrisColor_Pixelwise(cv::Mat3b& image, const cv::Mat1b
 			//double weight = 1.0 * std::exp(-d);
 			
 			cv::Vec3b& srcColor = image.at<cv::Vec3b>(i, j);
-			srcColor[0] = weight * this->color[0] + (1 - weight) * srcColor[0];
-			srcColor[1] = weight * this->color[1] + (1 - weight) * srcColor[1];
-			srcColor[2] = weight * this->color[2] + (1 - weight) * srcColor[2];
+			assert(weight * this->color[0] + (1 - weight) * srcColor[0] <= 255);
+			assert(weight * this->color[1] + (1 - weight) * srcColor[0] <= 255);
+			assert(weight * this->color[2] + (1 - weight) * srcColor[0] <= 255);
+			srcColor[0] = static_cast<uchar>(weight * this->color[0] + (1 - weight) * srcColor[0]);
+			srcColor[1] = static_cast<uchar>(weight * this->color[1] + (1 - weight) * srcColor[1]);
+			srcColor[2] = static_cast<uchar>(weight * this->color[2] + (1 - weight) * srcColor[2]);
 		}
 	}
 
@@ -323,9 +326,9 @@ void EyeColorFilter::createIrisMask(const std::vector<cv::Mat1b>& hsvChannels, c
 
 		// In case all the circles have very low ranks, it is better to go with our initial estimate 
 		assert(ranks[bestCircleIdx] > 0);
-		irisCenter.x = allCircles[bestCircleIdx][0];
-		irisCenter.y = allCircles[bestCircleIdx][1];
-		radius = allCircles[bestCircleIdx][2];
+		irisCenter.x = static_cast<int>(allCircles[bestCircleIdx][0]);
+		irisCenter.y = static_cast<int>(allCircles[bestCircleIdx][1]);
+		radius = static_cast<int>(allCircles[bestCircleIdx][2]);
 	}	// circles not empty
 
 	// Fill the iris circle
@@ -485,7 +488,7 @@ void EyeColorFilter::createIrisMask(const cv::Mat1b& imageGray, const std::vecto
 
 void EyeColorFilter::changeIrisColor_Overlaying(cv::Mat3b& image, const cv::Mat1b& irisMask, const cv::Point& irisCenter, bool blur) const
 {	
-	cv::Mat3b iris(image.size(), cv::Vec3b( this->color[0], this->color[1], this->color[2] ));
+	cv::Mat3b iris(image.size(), cv::Vec3b(static_cast<uchar>(this->color[0]), static_cast<uchar>(this->color[1]), static_cast<uchar>(this->color[2])));
 	//this->iris.create(image.size());
 	//this->iris.setTo(cv::Vec3b(this->color[0], this->color[1], this->color[2]));
 	//cv::Mat iris(image.size(), CV_8UC3, this->color);
