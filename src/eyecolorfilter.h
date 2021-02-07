@@ -29,16 +29,24 @@ private:
 	//void createIrisMask(const cv::Mat1b& imageGray, const std::vector<cv::Point> &eyeContour, 
 	//	int minRadius, int maxRadius, cv::Point &center, cv::Mat1b& irisMask) const;
 
+
+	cv::Rect detectIris(const std::vector<cv::Mat1b>& channels, const std::vector<cv::Point>& eyeContour,
+		int minRadius, int maxRadius, cv::Point& irisCenter, cv::Mat1b& irisMask) const;
+
+	void changeIrisColor_Overlaying(cv::Mat3b& image, const cv::Rect& eyeRect, const cv::Mat1b& irisMask, 
+		const cv::Point& irisCenter, bool blur) const;
+
+	void changeIrisColor_Pixelwise(cv::Mat3b& image, const cv::Mat1b& hueChannel, const std::vector<cv::Point>& eyeContour,
+		const cv::Point& center, int minRadius, int maxRadius) const;
+
+
+	/*
 	void createIrisMask(const std::vector<cv::Mat1b>& hsvChannels, const std::vector<cv::Point>& eyeContour,
 		int minRadius, int maxRadius, cv::Point& center, cv::Mat1b& irisMask) const;
 
 	void changeIrisColor_Overlaying(cv::Mat3b& image, const cv::Mat1b& irisMask, const cv::Point& irisCenter, bool blur) const;
+	*/
 
-
-	void changeIrisColor_Pixelwise(cv::Mat3b& image, const cv::Mat1b& hueChannel, const std::vector<cv::Point>& eyeContour, 
-		const cv::Point &center, int minRadius, int maxRadius) const;	
-
-	//int detectIris(const cv::Mat& image, cv::Point &center, int minRadius, int maxRadius) const;
 
 	cv::Scalar color{ 55, 163, 55, 100 };
 	//cv::Scalar color{ 72, 114, 75, 130 };
