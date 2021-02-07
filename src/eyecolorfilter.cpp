@@ -68,29 +68,19 @@ void EyeColorFilter::modify(cv::Mat& image) const
 
 	//cv::imwrite("z:/value.jpg", channelsHSV[2]);
 
+	
 	auto changeIrisColor = [this, &channelsHSV, &image3b](const std::vector<cv::Point>& eyeContour, int minRadius, int maxRadius, cv::Point& irisCenter)
 	{
 		cv::Mat1b mask;
-		//createIrisMask(channelsHSV[2], eyeContour, minRadius, maxRadius, irisCenter, mask);		
 		createIrisMask(channelsHSV, eyeContour, minRadius, maxRadius, irisCenter, mask);
 		changeIrisColor_Overlaying(image3b, mask, irisCenter, minRadius>7);
+
+		// Another working method
+		//changeIrisColor_Pixelwise(image3b, channelsHSV[0], eyeContour, irisCenter, minRadius, maxRadius);
 	};
 	
 	changeIrisColor(eyePointsLeft, minRadiusLeft, maxRadiusLeft, centerLeft);
 	changeIrisColor(eyePointsRight, minRadiusRight, maxRadiusRight, centerRight);
-
-	/*cv::Mat1b maskLeft, maskRight;
-	createIrisMask(channelsHSV[0], eyePointsLeft, minRadiusLeft, maxRadiusLeft, maskLeft, centerLeft);
-	createIrisMask(channelsHSV[0], eyePointsRight, minRadiusRight, maxRadiusRight, maskRight, centerRight);
-
-	changeIrisColor(image3b, maskLeft, centerLeft);
-	changeIrisColor(image3b, maskRight, centerRight);
-	*/
-
-	/*
-	changeIrisColorPixelwise(image3b, channelsHSV[0], eyePointsLeft, centerLeft, minRadiusLeft, maxRadiusLeft);
-	changeIrisColorPixelwise(image3b, channelsHSV[0], eyePointsRight, centerRight, minRadiusRight, maxRadiusRight);
-	*/
 }	// modify
 
 
@@ -183,6 +173,13 @@ void EyeColorFilter::createIrisMask(const std::vector<cv::Mat1b>& hsvChannels, c
 	//cv::imshow("mask", this->eyeMask);
 	//cv::waitKey();
 
+	// TODO: perhaps, try using a bounding rect (increased)
+	cv::Rect eyeRect = cv::boundingRect(eyeContour);
+	eyeRect.x -= maxRadius;
+	eyeRect.y -= maxRadius;
+	eyeRect.width += maxRadius;
+	eyeRect.height += maxRadius;
+
 	cv::Mat1b eyeMaskDilated;
 	cv::dilate(eyeMask, eyeMaskDilated, cv::getStructuringElement(cv::MORPH_RECT, cv::Size(2*maxRadius, 2*maxRadius)));
 	//cv::Mat1b eyeMaskDilated=eyeMask;	// TEST!
@@ -196,6 +193,8 @@ void EyeColorFilter::createIrisMask(const std::vector<cv::Mat1b>& hsvChannels, c
 		eyeGray.setTo(0);	// clear the mask
 		channel.copyTo(eyeGray, eyeMaskDilated);
 		//cv::GaussianBlur(eyeGray, eyeGray, cv::Size(7, 7), 1.5, 1.5);	// TEST!
+		// TODO: perhaps, try using ROI rectangle to speed up circle detection
+		eyeGray = eyeGray(eyeRect);		// TEST! does it work if eye rect exceeds the limits?
 
 		/// TEST!
 		//cv::imshow("eye gray", eyeGray);
@@ -218,9 +217,11 @@ void EyeColorFilter::createIrisMask(const std::vector<cv::Mat1b>& hsvChannels, c
 			
 			// Filter the circles: the iris center must lie within the eye contour
 			auto last = std::remove_if(std::execution::par_unseq, circles.begin(), circles.end(), 
-						[&eyeContour](const auto& circle)
+						[&eyeContour, &eyeRect](const auto& circle)
 						{
-							return cv::pointPolygonTest(eyeContour, cv::Point2f(circle[0], circle[1]), false) < 0;
+							//return cv::pointPolygonTest(eyeContour, cv::Point2f(circle[0], circle[1]), false) < 0;
+							// TEST!
+							return cv::pointPolygonTest(eyeContour, cv::Point2f(eyeRect.x + circle[0], eyeRect.y + circle[1]), false) < 0;
 						});
 			//allCircles.erase(last, allCircles.end());
 			if (last != circles.begin())	// not empty vector
@@ -260,7 +261,8 @@ void EyeColorFilter::createIrisMask(const std::vector<cv::Mat1b>& hsvChannels, c
 	////cv::fillConvexPoly(imcircles, eyeContour, cv::Scalar(255, 255, 255));
 	//for (const auto& circle : allCircles)
 	//{
-	//	cv::circle(imcircles, cv::Point(circle[0], circle[1]), circle[2], cv::Scalar(0, 255, 0), 1);
+	//	cv::circle(imcircles, cv::Point(eyeRect.x+circle[0], eyeRect.y+circle[1]), circle[2], cv::Scalar(0, 255, 0), 1);	// TEST!
+	//	//cv::circle(imcircles, cv::Point(circle[0], circle[1]), circle[2], cv::Scalar(0, 255, 0), 1);
 	//	//cv::circle(imcircles, cv::Point(circle[0], circle[1]), 1, cv::Scalar(255,0,0), -1);
 	//}
 	////cv::imwrite("z:/circles.jpg", imcircles);
@@ -326,8 +328,11 @@ void EyeColorFilter::createIrisMask(const std::vector<cv::Mat1b>& hsvChannels, c
 
 		// In case all the circles have very low ranks, it is better to go with our initial estimate 
 		assert(ranks[bestCircleIdx] > 0);
-		irisCenter.x = static_cast<int>(allCircles[bestCircleIdx][0]);
-		irisCenter.y = static_cast<int>(allCircles[bestCircleIdx][1]);
+		// TEST!
+		//irisCenter.x = static_cast<int>(allCircles[bestCircleIdx][0]);
+		irisCenter.x = static_cast<int>(eyeRect.x + allCircles[bestCircleIdx][0]);
+		//irisCenter.y = static_cast<int>(allCircles[bestCircleIdx][1]);
+		irisCenter.y = static_cast<int>(eyeRect.y + allCircles[bestCircleIdx][1]);
 		radius = static_cast<int>(allCircles[bestCircleIdx][2]);
 	}	// circles not empty
 
