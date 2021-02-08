@@ -32,7 +32,22 @@ find_package( OpenCV REQUIRED )
 include(../dlib/dlib/cmake)
 include_directories(${OpenCV_INCLUDE_DIRS})
 
-add_executable(vimaku main.cpp)
+add_executable(vimaku 
+	main.cpp 
+	abstractimagefilter.h 
+	abstractimagefilter.cpp 
+	abstractboxdetector.h 
+	abstractlandmarkdetector.h 
+	faciallandmarkdetector.h 
+	faciallandmarkdetector.cpp
+	faciallandmarkfilter.h
+	faciallandmarkfilter.cpp
+	eyecolorfilter.h
+	eyecolorfilter.cpp
+	lipstickcolorfilter.h
+	lipstickcolorfilter.cpp
+)
+
 target_link_libraries(vimaku ${OpenCV_LIBS} dlib::dlib)
 		
 	
@@ -46,7 +61,7 @@ add_custom_command(TARGET vimaku
 # Copy the test file to the output directory
 add_custom_command(TARGET vimaku
                    POST_BUILD
-                   COMMAND ${CMAKE_COMMAND} -E copy_if_different
-                   "${PROJECT_SOURCE_DIR}/../images/girl-no-makeup.jpg"
-                   "$<TARGET_FILE_DIR:vimaku>")
+                   COMMAND ${CMAKE_COMMAND} -E copy_directory
+                   "${PROJECT_SOURCE_DIR}/../images"
+                   "$<TARGET_FILE_DIR:vimaku>/images")
 
