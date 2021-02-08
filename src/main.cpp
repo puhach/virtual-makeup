@@ -11,8 +11,8 @@
 #include <opencv2/imgcodecs.hpp>
 #include <opencv2/highgui.hpp>
 
-using namespace std;
-using namespace cv;
+//using namespace std;
+//using namespace cv;
 
 
 // An auxiliary function for drawing facial landmarks
@@ -43,7 +43,7 @@ void saveLandmarks(const std::string& fileName, const std::vector<cv::Point>& la
 }
 
 // An auxiliary function for loading landmarks from a text file
-vector<Point> loadLandmarks(const std::string& fileName)
+std::vector<cv::Point> loadLandmarks(const std::string& fileName)
 {
 	std::ifstream ifs(fileName, std::ifstream::in);
 	assert(ifs.good());
@@ -51,7 +51,7 @@ vector<Point> loadLandmarks(const std::string& fileName)
 	size_t n;
 	ifs >> n;
 
-	vector<Point> landmarks(n);
+	std::vector<cv::Point> landmarks(n);
 	for (size_t i = 0; i < n; ++i)
 	{
 		unsigned long x, y;
@@ -73,9 +73,9 @@ vector<Point> loadLandmarks(const std::string& fileName)
 cv::Scalar strToColor(std::string_view hexRGBA, bool swapRB = true)
 {
 	if (hexRGBA.size() != 6 && hexRGBA.size() != 8)
-		throw invalid_argument(string("The specified color string has invalid length: ").append(hexRGBA));
+		throw std::invalid_argument(std::string("The specified color string has invalid length: ").append(hexRGBA));
 
-	string s(8, 'F');
+	std::string s(8, 'F');
 	std::transform(hexRGBA.begin(), hexRGBA.end(), s.begin(), [](const char& c)
 	{
 		return std::toupper(c);		
@@ -90,7 +90,7 @@ cv::Scalar strToColor(std::string_view hexRGBA, bool swapRB = true)
 		else if (c >= 'A' && c <= 'F')
 			c = 10 + c - 'A';
 		else 
-			throw invalid_argument("Invalid character. Only hex characters (0..9 and A..F) are allowed.");
+			throw std::invalid_argument("Invalid character. Only hex characters (0..9 and A..F) are allowed.");
 
 		colorRGBA[i / 2] = colorRGBA[i / 2] * 16 + c;
 	}
@@ -200,7 +200,7 @@ int main(int argc, char* argv[])
     {
         static const cv::String keys =
 			"{help h usage ?   |         | Print the help message  }"			
-			"{input            |<none>   | The input image }"
+			"{input            |<none>   | The input image file }"
 			"{lipstick_color   |         | The new lipstick color in RRGGBBAA notation }"
 			"{eye_color        |         | The new iris color in RRGGBBAA notation  }"
 			"{output           |         | If not empty, specifies the file where the output image will be saved to }";
@@ -217,7 +217,7 @@ int main(int argc, char* argv[])
 		std::string inputFile = parser.get<std::string>("input");
 		std::string lipstickColor = parser.get<std::string>("lipstick_color");
 		std::string eyeColor = parser.get<std::string>("eye_color");
-		std::string output = parser.get<std::string>("output");
+		std::string outputFile = parser.get<std::string>("output");
 		
 		if (!parser.check())
 		{
@@ -225,6 +225,64 @@ int main(int argc, char* argv[])
 			printUsage();
 			return -1;
 		}
+		
+		// Load the input image
+		cv::Mat imSrc = cv::imread(inputFile, cv::IMREAD_COLOR);
+        CV_Assert(!imSrc.empty());
+        
+        // Upscale the input image if it is too small        
+        cv::Mat imSrcResized;        
+        if (double imScale = std::max(imSrc.rows, imSrc.cols) / 600.0; imScale < 1.0)
+            cv::resize(imSrc, imSrcResized, cv::Size(), 1 / imScale, 1 / imScale, cv::INTER_CUBIC);
+        else
+            imSrc.copyTo(imSrcResized);
+        
+        
+        // Detect the landmarks
+        auto facialLandmarkDetector = std::make_shared<FacialLandmarkDetector>(0.5);    // TODO: change it to size limit
+        auto landmarks = facialLandmarkDetector->detect(imSrcResized);
+                
+        // Build the filter pipeline
+        
+        std::vector<std::unique_ptr<FacialLandmarkFilter>> filters;
+        
+        if (!lipstickColor.empty())
+            filters.push_back(std::make_unique<LipstickColorFilter>(strToColor(lipstickColor), facialLandmarkDetector));
+        
+        if (!eyeColor.empty())
+            filters.push_back(std::make_unique<EyeColorFilter>(strToColor(eyeColor), facialLandmarkDetector));
+        
+        // More filters can be added here
+        
+        
+        // Apply filters to the input image
+        cv::Mat imOut = imSrcResized;
+        for (const auto &filter : filters)
+        {
+            //filter->apply(imOut, landmarks, imOut);
+            filter->applyInPlace(imOut, landmarks);
+        }
+
+        // Restore the original image size        
+        if (imOut.size() != imSrc.size())
+            cv::resize(imOut, imOut, imSrc.size(), 0, 0, cv::INTER_AREA);
+        
+        // Place the original and the output images next to each other
+        cv::Mat imCombined;
+        cv::hconcat(imSrc, imOut, imCombined);
+        
+        // Downscale the concatenated image if it is too large
+        double scale = std::max(imCombined.rows, imCombined.cols) / 1000.0;
+        if (scale > 1.0)
+            cv::resize(imCombined, imCombined, cv::Size(0, 0), 1 / scale, 1 / scale, cv::INTER_AREA);
+
+        // Show the combined image to the user 
+        cv::imshow(inputFile, imCombined);
+        cv::waitKey();
+
+        // Save the output if needed
+        if (!outputFile.empty() && !cv::imwrite(outputFile, imOut))
+            throw std::runtime_error("Failed to save the output image to " + outputFile);
     }   // try
     catch (const std::exception &e)
     {
