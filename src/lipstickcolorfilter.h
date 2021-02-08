@@ -14,7 +14,8 @@
 class LipstickColorFilter : public FacialLandmarkFilter
 {
 public:
-	LipstickColorFilter(const cv::Scalar& color, std::shared_ptr<FacialLandmarkDetector> landmarkDetector) noexcept
+
+	LipstickColorFilter(std::shared_ptr<FacialLandmarkDetector> landmarkDetector, const cv::Scalar& color) //noexcept
 		: FacialLandmarkFilter(std::move(landmarkDetector))
         , color(color) {}
 

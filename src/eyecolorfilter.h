@@ -5,13 +5,18 @@
 
 #include <opencv2/core.hpp>
 
+
+// A landmark-based image filter for changing color of the iris
+
 class EyeColorFilter : public FacialLandmarkFilter
 {
 public:
-	EyeColorFilter(const cv::Scalar& color, std::shared_ptr<FacialLandmarkDetector> landmarkDetector) noexcept
+
+	EyeColorFilter(std::shared_ptr<FacialLandmarkDetector> landmarkDetector, const cv::Scalar& color) //noexcept
 		: FacialLandmarkFilter(std::move(landmarkDetector)) 
         , color(color) {}
 
+	// cv::Scalar's copy constructor is not noexcept
 	cv::Scalar getColor() const { return this->color; }
 
 	void setColor(const cv::Scalar& color) { this->color = color; }
@@ -27,8 +32,10 @@ protected:
 
 private:
 
+	// Overrides the inherited method to create a correct copy of this instance
 	virtual std::unique_ptr<AbstractImageFilter> createClone() const override;
 
+	// This private function is called by multiple public overloads to apply the eye color filter in-place
 	virtual void modify(cv::Mat& image) const override;
 
 	//void createIrisMask(const cv::Mat1b& imageGray, const std::vector<cv::Point> &eyeContour, 

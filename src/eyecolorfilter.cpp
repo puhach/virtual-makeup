@@ -16,16 +16,7 @@ std::unique_ptr<AbstractImageFilter> EyeColorFilter::createClone() const
 	return std::unique_ptr<EyeColorFilter>(new EyeColorFilter(*this));
 }
 
-/*
-// TEST!
-void EyeColorFilter::modify(cv::Mat& image) const
-{
-}
-*/
 
-
-// This private function is called by multiple public overloads to apply the eye color filter in-place.
-// It is virtual and can be overridden in descendants to alter filter behavior.
 void EyeColorFilter::modify(cv::Mat& image) const
 {
 	CV_Assert(!image.empty());
