@@ -101,10 +101,20 @@ cv::Scalar strToColor(std::string_view hexRGBA, bool swapRB = true)
 	return colorRGBA;
 }
 
+// Prints the help message describing how to use the program
+void printUsage()
+{
+	std::cout << "Usage: vimaku [-h]"
+				 " --input=<input image file>" 				      
+				 " [--lipstick_color=<the new lipstick color in the RRGGBBAA notation>]"
+				 " [--eye_color=<the new color of the eyes in the RRGGBBAA notation>]"
+                 " [--output=<output image file>]" << std::endl;
+}
+
 
 int main(int argc, char* argv[])
 {
-	
+	/*
 	try
 	{
 		//vector<string> inputFiles{ "./girl-no-makeup.jpg", "./girl2.png", "./girl3.jpg", "./girl4.jpg", "./girl5_small.jpg", "./girl6.jpg", "./girl7.png", "z:/boy1.jpg" };
@@ -155,7 +165,7 @@ int main(int argc, char* argv[])
 		cerr << e.what() << endl;
 		return -1;
 	}
-	
+	*/
 
 	/*
 	vector<string> inputFiles{"./girl-no-makeup.jpg", "./girl2.png", "./girl3.jpg", "./girl4.jpg", "./girl5.png", "./girl6.jpg", "./girl7.png", "z:/boy1.jpg"};
@@ -186,9 +196,45 @@ int main(int argc, char* argv[])
 	}
 	*/
 
+    try
+    {
+        static const cv::String keys =
+			"{help h usage ?   |         | Print the help message  }"			
+			"{input            |<none>   | The input image }"
+			"{lipstick_color   |         | The new lipstick color in RRGGBBAA notation }"
+			"{eye_color        |         | The new iris color in RRGGBBAA notation  }"
+			"{output           |         | If not empty, specifies the file where the output image will be saved to }";
+		
+		cv::CommandLineParser parser(argc, argv, keys);
+		parser.about("Glassify\n(c) Yaroslav Pugach");
+
+		if (parser.has("help"))
+		{
+			printUsage();
+			return 0;
+		}
+
+		std::string inputFile = parser.get<std::string>("input");
+		std::string lipstickColor = parser.get<std::string>("lipstick_color");
+		std::string eyeColor = parser.get<std::string>("eye_color");
+		std::string output = parser.get<std::string>("output");
+		
+		if (!parser.check())
+		{
+			parser.printErrors();
+			printUsage();
+			return -1;
+		}
+    }   // try
+    catch (const std::exception &e)
+    {
+        std::cerr << e.what() << std::endl;
+        return -1;
+    }   // catch
+	
 	/*
 	//Mat im = imread("./girl-no-makeup.jpg", IMREAD_COLOR);
-	Mat im = imread("./girl2.png", IMREAD_COLOR);
+	Mat im = imread("./images/girl2.png", IMREAD_COLOR);
 	//Mat im = imread("./girl5_small.jpg", IMREAD_COLOR);
 	//Mat im = imread("./girl6_large.jpg", IMREAD_COLOR);
 	//Mat im = imread("./girl5.png", IMREAD_COLOR);
@@ -204,13 +250,13 @@ int main(int argc, char* argv[])
 	//FacialLandmarkDetector facialLandmarkDetector(0.5);
 	//auto landmarks1 = facialLandmarkDetector.detect(im);
 	auto facialLandmarkDetector = make_shared<FacialLandmarkDetector>(0.5);		// TODO: replace the scaling factor with resizeHeight
-	//auto landmarks = facialLandmarkDetector->detect(im);
+	auto landmarks = facialLandmarkDetector->detect(im);
 
 	//saveLandmarks("z:/boy1.txt", landmarks);
 	//saveLandmarks("z:/girl5_small.txt", landmarks);
 	//auto landmarks = loadLandmarks("z:/girl5_small.txt");
 	//auto landmarks = loadLandmarks("z:/girl6_large.txt");
-	auto landmarks = loadLandmarks("z:/landmarks2.txt");
+	//auto landmarks = loadLandmarks("z:/landmarks2.txt");
 	//auto landmarks = loadLandmarks("z:/boy1.txt");
 	//drawLandmarks(im, landmarks);
 	//cv::imshow("test", im);
@@ -236,8 +282,8 @@ int main(int argc, char* argv[])
 	imshow("test", result);
 	waitKey();
 	cv::hconcat(im, result, result);
-	imwrite("z:/result.jpg", result);
-	*/
+	imwrite("/tmp/result.jpg", result);
+    */
 
 	return 0;
 }
