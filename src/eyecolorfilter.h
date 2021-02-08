@@ -8,17 +8,22 @@
 class EyeColorFilter : public FacialLandmarkFilter
 {
 public:
-	EyeColorFilter(std::shared_ptr<FacialLandmarkDetector> landmarkDetector) noexcept
-		: FacialLandmarkFilter(std::move(landmarkDetector)) {}
+	EyeColorFilter(const cv::Scalar& color, std::shared_ptr<FacialLandmarkDetector> landmarkDetector) noexcept
+		: FacialLandmarkFilter(std::move(landmarkDetector)) 
+        , color(color) {}
 
 	cv::Scalar getColor() const { return this->color; }
 
 	void setColor(const cv::Scalar& color) { this->color = color; }
 
 protected:
-	// TODO: define copy/move semantics
+    
+	EyeColorFilter() = default;
+	EyeColorFilter(const EyeColorFilter&) = default;
+	EyeColorFilter(EyeColorFilter&&) = default;
 
-	
+	EyeColorFilter& operator = (const EyeColorFilter&) = delete;
+	EyeColorFilter& operator = (EyeColorFilter&&) = delete;
 
 private:
 
