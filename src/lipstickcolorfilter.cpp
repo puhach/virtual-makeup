@@ -73,10 +73,11 @@ void LipstickColorFilter::modify(cv::Mat& image) const
 }
 */
 
-
+// Applies the lipstick color filter to the input image in-place
 void LipstickColorFilter::modify(cv::Mat& image) const
 {
 	CV_Assert(!image.empty());
+	CV_Assert(image.type() == CV_8UC3);
 
 	auto&& landmarks = grabLandmarks(image);		// obtain or read existing landmarks destructively
 	CV_Assert(landmarks.size() == 68);
@@ -84,19 +85,23 @@ void LipstickColorFilter::modify(cv::Mat& image) const
 
 	// Build the outer and the inner contours of the lips
 
-	static constexpr int outerIndices[] = { 48,49,50,51,52,53,54,55,56,57,58,59 }, innerIndices[] = { 60,61,62,63,64,65,66,67 };
+	std::vector<cv::Point> innerPoints, outerPoints;
+	std::move(landmarks.begin()+48, landmarks.begin()+59+1, std::back_inserter(outerPoints));
+	std::move(landmarks.begin()+60, landmarks.begin()+67+1, std::back_inserter(innerPoints));
+
+	/*static constexpr std::size_t outerIndices[] = { 48,49,50,51,52,53,54,55,56,57,58,59 }, innerIndices[] = { 60,61,62,63,64,65,66,67 };
 
 	std::vector<cv::Point> outerPoints;
 	for (auto idx : outerIndices)
 	{
-		outerPoints.push_back(landmarks[idx]);
+		outerPoints.push_back(std::move(landmarks[idx]));
 	}
 
 	std::vector<cv::Point> innerPoints;
 	for (auto idx : innerIndices)
 	{
-		innerPoints.push_back(landmarks[idx]);
-	}
+		innerPoints.push_back(std::move(landmarks[idx]));
+	}*/
 
 
 	// Create a mask for the lips region
@@ -108,7 +113,7 @@ void LipstickColorFilter::modify(cv::Mat& image) const
 	//cv::imshow("test", mask);
 	//cv::waitKey();
 
-	// Mix the lips and the lipstick color
+	// Mix the lips and the lipstick color to create a new texture
 
 	//cv::Mat lipstick(image.size(), CV_8UC3, cv::Scalar(0, 0, 255));
 	cv::Mat lipstick(image.size(), CV_8UC3, this->color);
@@ -119,13 +124,14 @@ void LipstickColorFilter::modify(cv::Mat& image) const
 	//cv::imshow("lipstick", lipstick);
 	//cv::waitKey();
 
-	
+	// Make edges softer
 	cv::blur(mask, mask, cv::Size(5, 5));
 
 	//cv::imshow("test", mask);
 	//cv::waitKey();
 
-	//double alpha = 0.4;		// TODO: add it as a parameter
+	// Perform alpha matting (this way we change the color of the lips but preserve original details)
+
 	double alpha = this->color[3] / 255.0;
 	cv::Mat maskF;
 	mask.convertTo(maskF, CV_32FC1, alpha * 1.0 / 255);
@@ -137,7 +143,6 @@ void LipstickColorFilter::modify(cv::Mat& image) const
 	cv::Mat lipstickF;
 	lipstick.convertTo(lipstickF, CV_32FC3, 1.0/255);
 
-	
 	//cv::Mat red(image.size(), CV_8UC3, cv::Scalar(0, 0, 255));
 	//red.copyTo(out, mask);
 	//cv::Mat redF(image.size(), CV_32FC3, cv::Scalar(0, 0, 1.0));
@@ -146,7 +151,7 @@ void LipstickColorFilter::modify(cv::Mat& image) const
 	//cv::imshow("lipstickF", lipstickF);
 	//cv::waitKey();
 
-	maskF.convertTo(maskF, CV_32FC3, -1, 1);
+	maskF.convertTo(maskF, CV_32FC3, -1, 1);	// invert the mask
 	cv::multiply(inputF, maskF, inputF);
 
 	inputF += lipstickF;
@@ -157,7 +162,7 @@ void LipstickColorFilter::modify(cv::Mat& image) const
 	inputF.convertTo(image, CV_8UC3, 255.0);
 	//cv::imshow("test", image);
 	//cv::waitKey();
-}
+}	// modify
 
 
 

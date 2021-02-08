@@ -15,7 +15,7 @@ using namespace std;
 using namespace cv;
 
 
-
+// An auxiliary function for drawing facial landmarks
 void drawLandmarks(cv::Mat& image, const std::vector<cv::Point>& landmarks)
 {
 	for (auto i = 0; i < landmarks.size(); ++i)
@@ -27,6 +27,7 @@ void drawLandmarks(cv::Mat& image, const std::vector<cv::Point>& landmarks)
 	}
 }
 
+// An auxiliary function for saving landmarks to a text file
 void saveLandmarks(const std::string& fileName, const std::vector<cv::Point>& landmarks)
 {
 	std::ofstream ofs(fileName, std::ofstream::out);
@@ -41,6 +42,7 @@ void saveLandmarks(const std::string& fileName, const std::vector<cv::Point>& la
 	assert(ofs.good());
 }
 
+// An auxiliary function for loading landmarks from a text file
 vector<Point> loadLandmarks(const std::string& fileName)
 {
 	std::ifstream ifs(fileName, std::ifstream::in);
@@ -102,13 +104,16 @@ cv::Scalar strToColor(std::string_view hexRGBA, bool swapRB = true)
 
 int main(int argc, char* argv[])
 {
+	
 	try
 	{
-		vector<string> inputFiles{ "./girl-no-makeup.jpg", "./girl2.png", "./girl3.jpg", "./girl4.jpg", "./girl5_small.jpg", "./girl6.jpg", "./girl7.png", "z:/boy1.jpg" };
-		//vector<string> landmarkFiles{ "z:/landmarks.txt", "z:/landmarks2.txt", "z:/landmarks3.txt", "z:/landmarks4.txt", "z:/landmarks5.txt", "z:/landmarks6.txt", "z:/landmarks7.txt", "z:/boy1.txt" };
+		//vector<string> inputFiles{ "./girl-no-makeup.jpg", "./girl2.png", "./girl3.jpg", "./girl4.jpg", "./girl5_small.jpg", "./girl6.jpg", "./girl7.png", "z:/boy1.jpg" };
+		vector<string> inputFiles{ "images/girl-no-makeup.jpg", "images/girl2.png", "images/girl3.jpg", "images/girl4.jpg", "images/girl5_small.jpg", "images/girl6.jpg", "images/girl7.png", "images/boy1.jpg" };
+		vector<string> landmarkFiles{ "z:/girl1.txt", "z:/girl2.txt", "z:/girl3.txt", "z:/girl4.txt", "z:/girl5.txt", "z:/girl6.txt", "z:/girl7.txt", "z:/boy1.txt" };
 
 		auto facialLandmarkDetector = make_shared<FacialLandmarkDetector>(0.5);		// TODO: replace the scaling factor with resizeHeight
 		unique_ptr<EyeColorFilter> eyeColorFilter = make_unique<EyeColorFilter>(facialLandmarkDetector);
+		unique_ptr<LipstickColorFilter> lipstickColorFilter = make_unique<LipstickColorFilter>(facialLandmarkDetector);
 
 		//namedWindow("test", cv::WINDOW_AUTOSIZE);
 
@@ -122,8 +127,12 @@ int main(int argc, char* argv[])
 			if (imScale < 1.0)
 				cv::resize(im, im, cv::Size(), 1 / imScale, 1 / imScale, cv::INTER_CUBIC);
 
-			//auto landmarks = loadLandmarks(landmarkFiles[i]);
-			cv::Mat out = eyeColorFilter->apply(im);
+			//auto landmarks = facialLandmarkDetector->detect(im);
+			//saveLandmarks(landmarkFiles[i], landmarks);
+			//cv::Mat out = eyeColorFilter->apply(im, landmarks);
+			auto landmarks = loadLandmarks(landmarkFiles[i]);
+			cv::Mat out = eyeColorFilter->apply(im, landmarks);
+			lipstickColorFilter->applyInPlace(out, landmarks);
 
 			cv::Mat imCombined;
 			cv::hconcat(im, out, imCombined);
@@ -146,6 +155,7 @@ int main(int argc, char* argv[])
 		cerr << e.what() << endl;
 		return -1;
 	}
+	
 
 	/*
 	vector<string> inputFiles{"./girl-no-makeup.jpg", "./girl2.png", "./girl3.jpg", "./girl4.jpg", "./girl5.png", "./girl6.jpg", "./girl7.png", "z:/boy1.jpg"};
@@ -178,9 +188,9 @@ int main(int argc, char* argv[])
 
 	/*
 	//Mat im = imread("./girl-no-makeup.jpg", IMREAD_COLOR);
-	//Mat im = imread("./girl2.png", IMREAD_COLOR);
+	Mat im = imread("./girl2.png", IMREAD_COLOR);
 	//Mat im = imread("./girl5_small.jpg", IMREAD_COLOR);
-	Mat im = imread("./girl6_large.jpg", IMREAD_COLOR);
+	//Mat im = imread("./girl6_large.jpg", IMREAD_COLOR);
 	//Mat im = imread("./girl5.png", IMREAD_COLOR);
 	//Mat im = imread("./girl7.png", IMREAD_COLOR);
 	//Mat im = imread("./boy1.jpg", IMREAD_COLOR);
@@ -199,7 +209,8 @@ int main(int argc, char* argv[])
 	//saveLandmarks("z:/boy1.txt", landmarks);
 	//saveLandmarks("z:/girl5_small.txt", landmarks);
 	//auto landmarks = loadLandmarks("z:/girl5_small.txt");
-	auto landmarks = loadLandmarks("z:/girl6_large.txt");
+	//auto landmarks = loadLandmarks("z:/girl6_large.txt");
+	auto landmarks = loadLandmarks("z:/landmarks2.txt");
 	//auto landmarks = loadLandmarks("z:/boy1.txt");
 	//drawLandmarks(im, landmarks);
 	//cv::imshow("test", im);

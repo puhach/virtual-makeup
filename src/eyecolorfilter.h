@@ -48,10 +48,10 @@ private:
 	*/
 
 
-	cv::Scalar color{ 55, 163, 55, 100 };
-	//cv::Scalar color{ 72, 114, 75, 130 };
-	//cv::Scalar color{ 100, 80, 30, 150 };
-	//cv::Scalar color{ 2, 25, 46, 250 };
+	//cv::Scalar color{ 55, 163, 55, 100 };		// vivid green
+	cv::Scalar color{ 72, 114, 75, 130 };		// pale green
+	//cv::Scalar color{ 100, 80, 30, 150 };		// blue
+	//cv::Scalar color{ 2, 25, 46, 250 };			// dark brown
 
 	// do we really need these memory buffers
 	//mutable cv::Mat1b eyeMask, eyeGray;

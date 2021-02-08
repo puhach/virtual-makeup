@@ -17,20 +17,27 @@ std::unique_ptr<AbstractImageFilter> EyeColorFilter::createClone() const
 }
 
 
+// This private function is called by multiple public overloads to apply the eye color filter in-place.
+// It is virtual and can be overridden in descendants to alter filter behavior.
 void EyeColorFilter::modify(cv::Mat& image) const
 {
 	CV_Assert(!image.empty());
 	CV_Assert(image.type() == CV_8UC3);
 	cv::Mat3b image3b = image;	
 
+	// Detect or destructively read existing facial landmarks
 	auto&& landmarks = grabLandmarks(image);
 	CV_Assert(landmarks.size() == 68);
 
-	//static constexpr std::size_t leftEyeIndices[] = { 37, 38, 40, 41 }, rightEyeIndices[] = { 43, 44, 46, 47 };
+
+	// Estimate the iris centers and radii using the landmarks
+
 	static constexpr std::array<std::size_t, 4> leftIrisIndices{ 37, 38, 40, 41 }, rightIrisIndices{ 43, 44, 46, 47 };
 
 	auto estimateIrisLocation = [&landmarks](const std::array<std::size_t, 4> &indices, cv::Point& center, int& minRadius, int& maxRadius)
 	{
+		// The center of the iris is expected to be located in the middle of inner landmarks on the eye contour
+
 		center = std::accumulate(indices.begin(), indices.end(), cv::Point(0, 0), 
 			[&landmarks](const cv::Point& p, std::size_t index)
 			{
@@ -40,6 +47,7 @@ void EyeColorFilter::modify(cv::Mat& image) const
 		assert(indices.size() > 0);
 		center /= static_cast<int>(indices.size());
 
+		// The radius of the iris is expected to be between the closest and the most distant inner landmark with respect to the estimated center
 		std::tie(minRadius, maxRadius) = std::accumulate(indices.begin(), indices.end(), std::pair<int, int>(std::numeric_limits<int>::max(), 0), 
 			[&landmarks, &center](const std::pair<int, int>& p, std::size_t index) 
 			{
@@ -53,16 +61,21 @@ void EyeColorFilter::modify(cv::Mat& image) const
 	estimateIrisLocation(leftIrisIndices, centerLeft, minRadiusLeft, maxRadiusLeft);
 	estimateIrisLocation(rightIrisIndices, centerRight, minRadiusRight, maxRadiusRight);
 
+	// Build contours for the left and right eye
 	std::vector<cv::Point> eyePointsLeft(6), eyePointsRight(6);
-	std::move(landmarks.begin() + 36, landmarks.begin() + 42, eyePointsLeft.begin());
-	std::move(landmarks.begin() + 42, landmarks.begin() + 48, eyePointsRight.begin());
+	std::move(landmarks.begin() + 36, landmarks.begin() + 41 + 1, eyePointsLeft.begin());
+	std::move(landmarks.begin() + 42, landmarks.begin() + 47 + 1, eyePointsRight.begin());
 	
-	
+	// Split the image into hue, saturation, and value channels to be processed separately 
 	cv::Mat3b imageHSV;
 	image3b.convertTo(imageHSV, image.type());
 	std::vector<cv::Mat1b> hsvChannels;
 	cv::split(image, hsvChannels);
 	
+
+	// Use the eye contour along with the approximated iris parameters to find the iris more precisely. Once we know its position,
+	// we can change the color to the one specified by the user.
+
 	auto changeIrisColor = [this, &hsvChannels, &image3b](const std::vector<cv::Point>& eyeContour, int minRadius, int maxRadius, cv::Point& irisCenter)
 	{
 		cv::Mat1b mask;
