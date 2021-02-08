@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8.12)
+cmake_minimum_required(VERSION 3.0)
 
 PROJECT(Virtual_Makeup)
 SET(CMAKE_CXX_STANDARD 17)
@@ -48,6 +48,16 @@ add_executable(vimaku
 	lipstickcolorfilter.cpp
 )
 
+#[[
+# GCC requires tbb to be linked in order to use execution policies
+set(LINK_LIBS ${OpenCV_LIBS} dlib::dlib)
+if (CMAKE_CXX_COMPILER_ID MATCHES "GNU")    
+    list(APPEND LINK_LIBS tbb)
+endif()
+
+#message(${LINK_LIBS})
+target_link_libraries(vimaku ${LINK_LIBS})
+]]
 target_link_libraries(vimaku ${OpenCV_LIBS} dlib::dlib)
 		
 	
