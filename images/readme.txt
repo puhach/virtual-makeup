@@ -1,0 +1,1 @@
+This folder is copied to the output directory when the project is built. You may add test images here. 
