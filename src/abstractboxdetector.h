@@ -13,13 +13,15 @@
 class AbstractBoxDetector
 {
 public:
+
 	virtual ~AbstractBoxDetector() = default;
 	
 	cv::Rect detect(const cv::Mat& image) const { return detectObject(image); }
 
-	std::unique_ptr<AbstractBoxDetector> clone() const { return createClone(); }	// NVI idiom
+	std::unique_ptr<AbstractBoxDetector> clone() const { return createClone(); }	
 
 protected:
+
 	AbstractBoxDetector() = default;
 	
 	// Restrict copy/move operations since this is a polymorphic type
@@ -31,10 +33,9 @@ protected:
 	AbstractBoxDetector& operator = (AbstractBoxDetector&&) = delete;
 
 private:	
+
 	virtual std::unique_ptr<AbstractBoxDetector> createClone() const = 0;
 	virtual cv::Rect detectObject(const cv::Mat &image) const = 0;
-	//virtual std::vector<cv::Rect> detectCandidates(const cv::Mat& image) const = 0;
-	//virtual cv::Rect selectBestCandidate(const std::vector<cv::Rect>& candidates) const = 0;
 };	// AbstractBoxDetector
 
 

@@ -68,7 +68,7 @@ std::vector<cv::Point> loadLandmarks(const std::string& fileName)
 
 // Converts hexadecimal RGB/RGBA strings like "FF12BB" and "FF12BB33" to OpenCV Scalar. The first 6 digits define the values 
 // of R, G, B components. The last pair of digits, interpreted as a hexadecimal number, specifies the alpha channel of the color, 
-// where 00 represents a fully transparent color and FF represent a fully opaque color. The optional swapRB parameter determines 
+// where 00 represents a fully transparent color and FF represents a fully opaque color. The optional swapRB parameter determines 
 // whether the red and blue components must be swapped.
 cv::Scalar strToColor(std::string_view hexRGBA, bool swapRB = true)
 {
@@ -114,88 +114,6 @@ void printUsage()
 
 int main(int argc, char* argv[])
 {
-	/*
-	try
-	{
-		//vector<string> inputFiles{ "./girl-no-makeup.jpg", "./girl2.png", "./girl3.jpg", "./girl4.jpg", "./girl5_small.jpg", "./girl6.jpg", "./girl7.png", "z:/boy1.jpg" };
-		vector<string> inputFiles{ "images/girl-no-makeup.jpg", "images/girl2.png", "images/girl3.jpg", "images/girl4.jpg", "images/girl5_small.jpg", "images/girl6.jpg", "images/girl7.png", "images/boy1.jpg" };
-		vector<string> landmarkFiles{ "z:/girl1.txt", "z:/girl2.txt", "z:/girl3.txt", "z:/girl4.txt", "z:/girl5.txt", "z:/girl6.txt", "z:/girl7.txt", "z:/boy1.txt" };
-
-		auto facialLandmarkDetector = make_shared<FacialLandmarkDetector>(0.5);		// TODO: replace the scaling factor with resizeHeight
-		unique_ptr<EyeColorFilter> eyeColorFilter = make_unique<EyeColorFilter>(facialLandmarkDetector);
-		unique_ptr<LipstickColorFilter> lipstickColorFilter = make_unique<LipstickColorFilter>(facialLandmarkDetector);
-
-		//namedWindow("test", cv::WINDOW_AUTOSIZE);
-
-		for (int i = 0; i < inputFiles.size(); ++i)
-		{
-			Mat im = imread(inputFiles[i], IMREAD_COLOR);
-			CV_Assert(!im.empty());
-
-			cv::Size imSizeOriginal = im.size();
-			double imScale = max(im.rows, im.cols) / 600.0;
-			if (imScale < 1.0)
-				cv::resize(im, im, cv::Size(), 1 / imScale, 1 / imScale, cv::INTER_CUBIC);
-
-			//auto landmarks = facialLandmarkDetector->detect(im);
-			//saveLandmarks(landmarkFiles[i], landmarks);
-			//cv::Mat out = eyeColorFilter->apply(im, landmarks);
-			auto landmarks = loadLandmarks(landmarkFiles[i]);
-			cv::Mat out = eyeColorFilter->apply(im, landmarks);
-			lipstickColorFilter->applyInPlace(out, landmarks);
-
-			cv::Mat imCombined;
-			cv::hconcat(im, out, imCombined);
-			cv::imwrite("z:/result" + std::to_string(i + 1) + ".jpg", imCombined);
-
-			double scale = max(imCombined.rows, imCombined.cols) / 1000.0;
-			if (scale > 1.0)
-				cv::resize(imCombined, imCombined, cv::Size(0, 0), 1 / scale, 1 / scale, cv::INTER_LINEAR);
-
-			cv::imshow("test", imCombined);
-			cv::waitKey();
-
-			if (out.size() != imSizeOriginal)
-				cv::resize(out, out, imSizeOriginal, 0, 0, cv::INTER_AREA);
-
-		}	// for i
-	} // catch
-	catch (const std::exception& e)
-	{
-		cerr << e.what() << endl;
-		return -1;
-	}
-	*/
-
-	/*
-	vector<string> inputFiles{"./girl-no-makeup.jpg", "./girl2.png", "./girl3.jpg", "./girl4.jpg", "./girl5.png", "./girl6.jpg", "./girl7.png", "z:/boy1.jpg"};
-	vector<string> landmarkFiles{"z:/landmarks.txt", "z:/landmarks2.txt", "z:/landmarks3.txt", "z:/landmarks4.txt", "z:/landmarks5.txt", "z:/landmarks6.txt", "z:/landmarks7.txt", "z:/boy1.txt"};
-
-	//auto facialLandmarkDetector = make_shared<FacialLandmarkDetector>(0.5);		// TODO: replace the scaling factor with resizeHeight
-	unique_ptr<EyeColorFilter> eyeColorFilter = make_unique<EyeColorFilter>(nullptr);
-
-	//namedWindow("test", cv::WINDOW_AUTOSIZE);
-
-	for (int i = 0; i < inputFiles.size(); ++i)
-	{
-		Mat im = imread(inputFiles[i], IMREAD_COLOR);
-		CV_Assert(!im.empty());
-
-		auto landmarks = loadLandmarks(landmarkFiles[i]);
-		cv::Mat out = eyeColorFilter->apply(im, landmarks);
-
-		cv::hconcat(im, out, out);
-		cv::imwrite("z:/result" + std::to_string(i+1) + ".jpg", out);
-
-		double scale = max(out.rows, out.cols) / 1000.0;
-		if (scale > 1.0)
-			cv::resize(out, out, cv::Size(0,0), 1/scale, 1/scale, cv::INTER_LINEAR);
-
-		cv::imshow("test", out);
-		cv::waitKey();
-	}
-	*/
-
     try
     {
         static const cv::String keys =
@@ -239,7 +157,7 @@ int main(int argc, char* argv[])
         
         
         // Detect the landmarks
-        auto facialLandmarkDetector = std::make_shared<FacialLandmarkDetector>(0.5);    // TODO: change it to size limit
+        auto facialLandmarkDetector = std::make_shared<FacialLandmarkDetector>(0.5);    
         auto landmarks = facialLandmarkDetector->detect(imSrcResized);
                 
         // Build the filter pipeline
@@ -247,10 +165,10 @@ int main(int argc, char* argv[])
         std::vector<std::unique_ptr<FacialLandmarkFilter>> filters;
         
         if (!lipstickColor.empty())
-            filters.push_back(std::make_unique<LipstickColorFilter>(strToColor(lipstickColor), facialLandmarkDetector));
+            filters.push_back(std::make_unique<LipstickColorFilter>(facialLandmarkDetector, strToColor(lipstickColor)));
         
         if (!eyeColor.empty())
-            filters.push_back(std::make_unique<EyeColorFilter>(strToColor(eyeColor), facialLandmarkDetector));
+            filters.push_back(std::make_unique<EyeColorFilter>(facialLandmarkDetector, strToColor(eyeColor)));
         
         // More filters can be added here
         
@@ -289,59 +207,6 @@ int main(int argc, char* argv[])
         std::cerr << e.what() << std::endl;
         return -1;
     }   // catch
-	
-	/*
-	//Mat im = imread("./girl-no-makeup.jpg", IMREAD_COLOR);
-	Mat im = imread("./images/girl2.png", IMREAD_COLOR);
-	//Mat im = imread("./girl5_small.jpg", IMREAD_COLOR);
-	//Mat im = imread("./girl6_large.jpg", IMREAD_COLOR);
-	//Mat im = imread("./girl5.png", IMREAD_COLOR);
-	//Mat im = imread("./girl7.png", IMREAD_COLOR);
-	//Mat im = imread("./boy1.jpg", IMREAD_COLOR);
-	CV_Assert(!im.empty());
-
-	//cv::resize(im, im, Size(), 2, 2);		// TEST!
-	//cv::imwrite("z:/girl5_2x.jpg", im);
-
-	//unique_ptr<FacialLandmarkDetector<std::vector<cv::Point>>> facialLandmarkDetector = make_unique<FacialLandmarkDetector<std::vector<cv::Point>>>();
-	//FacialLandmarkDetector<std::vector<cv::Point>> facialLandmarkDetector(0.5);
-	//FacialLandmarkDetector facialLandmarkDetector(0.5);
-	//auto landmarks1 = facialLandmarkDetector.detect(im);
-	auto facialLandmarkDetector = make_shared<FacialLandmarkDetector>(0.5);		// TODO: replace the scaling factor with resizeHeight
-	auto landmarks = facialLandmarkDetector->detect(im);
-
-	//saveLandmarks("z:/boy1.txt", landmarks);
-	//saveLandmarks("z:/girl5_small.txt", landmarks);
-	//auto landmarks = loadLandmarks("z:/girl5_small.txt");
-	//auto landmarks = loadLandmarks("z:/girl6_large.txt");
-	//auto landmarks = loadLandmarks("z:/landmarks2.txt");
-	//auto landmarks = loadLandmarks("z:/boy1.txt");
-	//drawLandmarks(im, landmarks);
-	//cv::imshow("test", im);
-	//cv::waitKey();
-	//imwrite("z:/landmarks.jpg", im);
-	
-	unique_ptr<LipstickColorFilter> lipstickColorFilter = make_unique<LipstickColorFilter>(facialLandmarkDetector);
-	//lipstickColorFilter->setLandmarks(landmarks);	// optional
-	//auto out = lipstickColorFilter->apply(im, std::move(landmarks));
-	lipstickColorFilter->setColor(strToColor("Ff023050"));
-	
-	unique_ptr<EyeColorFilter> eyeColorFilter = make_unique<EyeColorFilter>(facialLandmarkDetector);
-	//eyeColorFilter->setColor();
-	
-	//cv::Mat result = lipstickColorFilter->apply(im, landmarks);
-	//lipstickColorFilter->apply()
-
-	//cv::Mat result = eyeColorFilter->apply(im);
-	cv::Mat result = eyeColorFilter->apply(im, landmarks);
-	//eyeColorFilter->applyInPlace(im, landmarks);
-	//eyeColorFilter->applyInPlace(result, landmarks);
-
-	imshow("test", result);
-	waitKey();
-	cv::hconcat(im, result, result);
-	imwrite("/tmp/result.jpg", result);
-    */
 
 	return 0;
 }

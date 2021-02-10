@@ -2,7 +2,6 @@
 
 #include <opencv2/imgproc.hpp>
 #include <opencv2/photo.hpp>
-#include <opencv2/highgui.hpp>	// TEST!
 
 #include <vector>
 #include <limits>
@@ -104,58 +103,27 @@ cv::Rect EyeColorFilter::detectIris(const std::vector<cv::Mat1b>& channels, cons
 	eyeRect.width = std::min(channels[0].cols - eyeRect.x, eyeRect.width + 2 * maxRadius);
 	eyeRect.height = std::min(channels[0].rows - eyeRect.y, eyeRect.height + 2 * maxRadius);
 
-	std::vector<cv::Vec3f> allCircles;
-	std::vector<cv::Vec3f> circles;
+	std::vector<cv::Vec3f> circles, allCircles;
 	for (const auto& channel : channels)
 	{
 		cv::Mat1b eyeGray = channel(eyeRect);
         
-        
-		//TEST!
-		//cv::imshow("eye gray", eyeGray);
-		//cv::waitKey();
-
 		for (int threshold = 400; threshold > 50; threshold -= 10)
 		{
-			//cv::HoughCircles(eyeGray, circles, cv::HOUGH_GRADIENT, 1, 1, 100, 5, minRadius, maxRadius);
-			//cv::HoughCircles(eyeGray, circles, cv::HOUGH_GRADIENT, 1, 1, 100, 5, minRadius, minRadius + 0.7*(maxRadius-minRadius));	// TEST!
-			//cv::HoughCircles(eyeGray, circles, cv::HOUGH_GRADIENT, 1, 1, 300, 5, minRadius, maxRadius);
-			//cv::HoughCircles(eyeGray, circles, cv::HOUGH_GRADIENT, 1, 1, 240, 5, minRadius, maxRadius);
-			//cv::HoughCircles(eyeGray, circles, cv::HOUGH_GRADIENT, 1, 1, 270, 5, minRadius, maxRadius);
-			//cv::HoughCircles(eyeGray, circles, cv::HOUGH_GRADIENT, 1, 1, 293, 5, minRadius, maxRadius);
-			//cv::HoughCircles(eyeGray, circles, cv::HOUGH_GRADIENT, 1, 1, 292, 5, minRadius, maxRadius);	// !
-			//cv::HoughCircles(eyeGray, circles, cv::HOUGH_GRADIENT, 1, 1, 300, 4, minRadius, maxRadius);
-
 			circles.clear();
-			//std::vector<cv::Vec3f> circles;	// TEST!			
 			cv::HoughCircles(eyeGray, circles, cv::HOUGH_GRADIENT, 1, 1, threshold, 5, minRadius, maxRadius);
 			//cv::HoughCircles(eyeGray, circles, cv::HOUGH_GRADIENT_ALT, 1, 1, threshold, 0.8, 17, maxRadius);
 
 			// Filter the circles: the iris center must lie within the eye contour
             auto last = std::remove_if(circles.begin(), circles.end(),  
-			//auto last = std::remove_if(std::execution::par_unseq, circles.begin(), circles.end(),      // TEST!
+			//auto last = std::remove_if(std::execution::par, circles.begin(), circles.end(),      
 				[&eyeContour, &eyeRect](const auto& circle)
 				{
 					return cv::pointPolygonTest(eyeContour, cv::Point2f(eyeRect.x + circle[0], eyeRect.y + circle[1]), false) < 0;
 				});
-			//allCircles.erase(last, allCircles.end());
-			if (last != circles.begin())	// not empty vector
+			
+			if (last != circles.begin())	// appropriate circles detected
 			{
-                /*
-				// TEST!
-				cv::Mat imcircles;
-				cv::merge(std::vector<cv::Mat>{channel, channel, channel}, imcircles);
-				//cv::fillConvexPoly(imcircles, eyeContour, cv::Scalar(255, 255, 255));
-				for (const auto& circle : circles)
-				{
-					cv::circle(imcircles, cv::Point(eyeRect.x+circle[0], eyeRect.y+circle[1]), circle[2], cv::Scalar(0, 255, 0), 1);
-					//cv::circle(imcircles, cv::Point(circle[0], circle[1]), 1, cv::Scalar(255,0,0), -1);
-				}
-				///cv::imwrite("z:/circles.jpg", imcircles);
-				cv::imshow("circles", imcircles);
-				cv::waitKey();
-                */
-                
 				std::move(circles.begin(), last, std::back_inserter(allCircles));
 				break;
 			}	// not empty 					
@@ -165,33 +133,17 @@ cv::Rect EyeColorFilter::detectIris(const std::vector<cv::Mat1b>& channels, cons
 	}	// for channels
 
 
-	//// TEST!
-	//cv::Mat imcircles;
-	//cv::merge(std::vector<cv::Mat>{hsvChannels[0], hsvChannels[0], hsvChannels[0]}, imcircles);
-	////cv::fillConvexPoly(imcircles, eyeContour, cv::Scalar(255, 255, 255));
-	//for (const auto& circle : allCircles)
-	//{
-	//	cv::circle(imcircles, cv::Point(eyeRect.x+circle[0], eyeRect.y+circle[1]), circle[2], cv::Scalar(0, 255, 0), 1);	// TEST!
-	//	//cv::circle(imcircles, cv::Point(circle[0], circle[1]), circle[2], cv::Scalar(0, 255, 0), 1);
-	//	//cv::circle(imcircles, cv::Point(circle[0], circle[1]), 1, cv::Scalar(255,0,0), -1);
-	//}
-	////cv::imwrite("z:/circles.jpg", imcircles);
-	//cv::imshow("circles filtered", imcircles);
-	//cv::waitKey();
-
 	// Select the best iris circle
 
-	//cv::Point irisCenter{ eyeCenter.x - eyeRect.x, eyeCenter.y - eyeRect.y };
 	irisCenter.x -= eyeRect.x;
 	irisCenter.y -= eyeRect.y;
 	int radius = minRadius;
 
 	if (!allCircles.empty())
 	{
-		//int bestCircleIdx = 0;
 		std::vector<double> ranks(allCircles.size(), 0);
 
-		//std::transform(std::execution::par_unseq, allCircles.begin(), allCircles.end(), ranks.begin(),  // TEST!
+		//std::transform(std::execution::par, allCircles.begin(), allCircles.end(), ranks.begin(),  
         std::transform(allCircles.begin(), allCircles.end(), ranks.begin(),             
 			[&allCircles](const cv::Vec3f& circleI)
 			{
@@ -202,59 +154,25 @@ cv::Rect EyeColorFilter::detectIris(const std::vector<cv::Mat1b>& channels, cons
 				});	// accumulate
 			});	// transform
 
-		//auto bestCircleIdx = std::max_element(std::execution::par_unseq, ranks.begin(), ranks.end()) - ranks.begin();   // TEST!
+		//auto bestCircleIdx = std::max_element(std::execution::par_unseq, ranks.begin(), ranks.end()) - ranks.begin();   
         auto bestCircleIdx = std::max_element(ranks.begin(), ranks.end()) - ranks.begin();   
 		assert(bestCircleIdx >= 0);
-
-		//for (std::size_t i = 0; i < allCircles.size(); ++i)	// TODO: try to use reduce here too
-		//{
-		//	//cv::Point2f center(allCircles[i][0], allCircles[i][1]);
-
-
-		//	// The iris center must lie within the eye contour
-		//	//assert(cv::pointPolygonTest(eyeContour, center, false) >= 0);
-
-		//	ranks[i] = std::reduce(allCircles.begin(), allCircles.end(), 0.0, 
-		//		[&center=cv::Point2f(allCircles[i][0], allCircles[i][1])](double vote, const auto& circle)
-		//		{
-		//			//double test = vote + std::exp(-cv::norm(center - cv::Point2f(circle[0], circle[1])));
-		//			return vote + std::exp(-cv::norm(center - cv::Point2f(circle[0], circle[1])));
-		//			//return test;
-		//		});
-
-		//	if (ranks[i] > ranks[bestCircleIdx])
-		//		bestCircleIdx = i;
-		//}	// for i
-
-		// In case all the circles have very low ranks, it is better to go with our initial estimate 
 		assert(ranks[bestCircleIdx] > 0);
-		//irisCenter.x = static_cast<int>(eyeRect.x + allCircles[bestCircleIdx][0]);
+
 		irisCenter.x = static_cast<int>(allCircles[bestCircleIdx][0]);
-		//irisCenter.y = static_cast<int>(eyeRect.y + allCircles[bestCircleIdx][1]);
 		irisCenter.y = static_cast<int>(allCircles[bestCircleIdx][1]);
 		radius = static_cast<int>(allCircles[bestCircleIdx][2]);
 	}	// circles not empty
 
 	// Fill the iris circle
-	//CV_Assert(!irisMask.empty());	// check that we have created the iris mask
-	//irisMask.create(channels[0].size());	// make sure the matrix is allocated
 	irisMask.create(eyeRect.size());	// make sure the matrix is allocated
 	irisMask.setTo(0);	// clear the mask
-	//cv::Mat1b irisMask(eyeRect.size(), 0);
 	cv::circle(irisMask, irisCenter, radius, cv::Scalar(255), -1);
 
 	// Use the eye contour to clip the parts of the iris exceeding eye boundaries
 	cv::Mat1b eyeMask(channels[0].size(), 0);
 	cv::fillConvexPoly(eyeMask, eyeContour, cv::Scalar(255));
 	cv::bitwise_and(irisMask, eyeMask(eyeRect), irisMask);
-
-	//// TEST!
-	//cv::Mat imtest = hsvChannels[0].clone();
-	//cv::circle(imtest, irisCenter, radius, cv::Scalar(0, 255, 0), 1);
-	//cv::imshow("iris", imtest);
-	//cv::waitKey();
-	//cv::imshow("iris mask", irisMask);
-	//cv::waitKey();
 
 	return eyeRect;
 }	// detectIris
@@ -271,9 +189,6 @@ void EyeColorFilter::changeIrisColor_Overlaying(cv::Mat3b& image, const cv::Rect
 	cv::Mat3b imageROI = image(eyeRect);
 	cv::seamlessClone(imageROI, irisTexture, irisMask, irisCenter, irisTexture, cv::MIXED_CLONE);
 
-	//cv::imshow("test", this->iris);
-	//cv::waitKey();
-
 
 	// Prepare the input image ROI, the iris texture, and the iris mask for alpha matting
 
@@ -289,22 +204,17 @@ void EyeColorFilter::changeIrisColor_Overlaying(cv::Mat3b& image, const cv::Rect
 	if (blur)
 	{
 		cv::erode(irisMaskF, irisMaskF, cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(3, 3)));
-		//cv::blur(irisMaskF, irisMaskF, cv::Size(7, 7));
 		cv::GaussianBlur(irisMaskF, irisMaskF, cv::Size(7, 7), 0, 0);
 	}
 
 	// Perform alpha matting
 
 	cv::multiply(irisF, irisMaskF, irisF);
-	//cv::imshow("iris", irisF);
-	//cv::waitKey();
 
 	irisMaskF.convertTo(irisMaskF, CV_32FC3, -1, +1);		// invert the mask
 	cv::multiply(inputF, irisMaskF, inputF);
 
 	inputF += irisF;
-	//cv::imshow("colored", inputF);
-	//cv::waitKey();
 
 	inputF.convertTo(imageROI, CV_8UC3, 255.0);
 }	// changeIrisColor_Overlaying
@@ -322,8 +232,6 @@ void EyeColorFilter::changeIrisColor_Pixelwise(cv::Mat3b& image, const cv::Mat1b
 	cv::Mat1b irisMask(image.size(), 0);
 	cv::circle(irisMask, center, maxRadius, cv::Scalar(255), -1);
 	eyeRegion.copyTo(irisMask, irisMask);
-	//cv::imshow("test", irisMask);
-	//cv::waitKey();
 
 	// Build the histogram of hues 
 	cv::Mat1f hist;
@@ -333,16 +241,9 @@ void EyeColorFilter::changeIrisColor_Pixelwise(cv::Mat3b& image, const cv::Mat1b
 	int domHue[2];
 	cv::minMaxIdx(hist, nullptr, nullptr, nullptr, domHue);
 
-	//// TEST!
-	//cv::Mat1b devMat;
-	//cv::absdiff(hueChannel, cv::Scalar(domHue[0]), devMat);
-	//cv::Scalar meanDev = cv::mean(devMat, irisMask);
-
 	// The color normalization constant is higher when the new color is less vivid 
 	// (this way we give a new color more weight in the final color mix)
 	double sigmaColor = 256.0 - cv::max({ this->color[0], this->color[1], this->color[2] });
-	//double sat = cv::max({ this->color[0], this->color[1], this->color[2] });
-	//sat = sat > 0 ? (1 - cv::min({ this->color[0], this->color[1], this->color[2] })/sat) : 0;
 
 	// Process the iris region pixel by pixel
 	int fromRow = std::max(0, center.y - maxRadius), toRow = std::min(image.rows - 1, center.y + maxRadius);
@@ -357,11 +258,8 @@ void EyeColorFilter::changeIrisColor_Pixelwise(cv::Mat3b& image, const cv::Mat1b
 			// Calculate the new color weight: it is higher if the current pixel color is close to the dominant color
 			// and if the current pixel location is close to the estimated iris center
 			double srcHue = hueChannel.at<uchar>(i, j);
-			//double d = std::abs((srcHue - domHue[0])/meanDev[0]) + cv::norm(cv::Point(j,i) - center)/radius;
-			//double d = std::abs((srcHue - domHue[0]) / sigmaColor) + cv::norm(cv::Point(j, i) - center) / minRadius;
 			double devColor = std::abs(srcHue - domHue[0]), devLoc = cv::norm(cv::Point(j, i) - center);
 			double weight = 1.0 * std::exp(-devColor / sigmaColor - devLoc / minRadius);
-			//double weight = this->color[3]/255 * std::exp(-devColor / sigmaColor - devLoc / minRadius);
 
 			// Mix the original color of the pixel and the new color with respect to the calculated weight
 			cv::Vec3b& srcColor = image.at<cv::Vec3b>(i, j);
@@ -373,8 +271,5 @@ void EyeColorFilter::changeIrisColor_Pixelwise(cv::Mat3b& image, const cv::Mat1b
 			srcColor[2] = static_cast<uchar>(weight * this->color[2] + (1 - weight) * srcColor[2]);
 		}	// for j
 	}	// for i
-
-	//cv::imshow("test", image);
-	//cv::waitKey();
 }	// changeIrisColor_Pixelwise
 
