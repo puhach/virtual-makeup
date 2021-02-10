@@ -1,6 +1,6 @@
 # Virtual Makeup
 
-![Virtual Makeup](./assets/cover.jpg)
+![Virtual Makeup](./assets/green_eyes_red_lipstick.jpg)
 
 With a virtual makeup try-on tool implemented in this project you can:
 
@@ -8,7 +8,7 @@ With a virtual makeup try-on tool implemented in this project you can:
 
 * Change eye color
 
-More features will be implemented later.
+More features will be added in time.
 
 The usage details are described below.
 
@@ -97,50 +97,55 @@ cmake --build . --config Release
 
 ## Usage
 
-The program has to be run from the command line. It takes in the path to the image containing the warped document and several optional parameters: 
+The program has to be run from the command line. It takes in the path to the image file and several optional parameters: 
 
 ```
-doscan  --input=<input image file>
-		[--output=<output file>]
-		[--view_invariant=<true or false>]
-		[--width=<a positive integer or zero>]
-		[--height=<a positive integer or zero>]
-		[--aspect_ratio=<a positive float>]
-		[--paper_detector=<1 - Ithresh, 2 - Savaldo>]
-		[--threshold_levels=<integer (1..255)>]
-		[--min_area_pct=<float (0..max_area_pct)>]
-		[--max_area_pct=<float (min_area_pct..1)>]
-		[--approx_accuracy_pct=<float (0..1)>]"
+vimaku  --input=<input image file>
+		[--output=<output image file>]
+		[--lipstick_color=<The new lipstick color>]
+		[--eye_color=<The new eye color>]		
 	 	[--help]
 ```
 
 Parameter    | Meaning 
 ------------ | --------------------------------------
 help, ? | Prints the help message.
-input | The file path of the image to be rectified.
-output | If not empty, specifies the output file path where the rectified image will be saved to.
-view_invariant | Determines whether the document's aspect ratio should be treated as view-invariant (true by default). 
-width | The rectified document's width (if zero, it is deduced from the height and the aspect ratio). Defaults to 500. 
-height | The rectified document's height (if zero, it is deduced from the width and the aspect ratio). Defaults to 0. 
-aspect_ratio | The rectified document's aspect ratio (unused if both width and height are specified). Defaults to 0.7071.
-paper_detector | The algorithm to be used for paper sheet detection (1 - Ithresh, 2 - Savaldo). Defaults to 1.
-threshold_levels | The number of threshold levels for the Ithresh paper sheet detector. Default value is 15.
-min_area_pct | The minimal fraction of the original image that the paper sheet must occupy to be considered for detection (0..max_area_pct). Default value is 0.5.
-max_area_pct | The maximal fraction of the original image that the paper sheet can occupy to be considered for detection (min_area_pct..1). Default value is 0.99.
-approx_accuracy_pct | The accuracy of contour approximation with respect to the contour length (0..1). Default value is 0.02.
+input | The input image file.
+output | If not empty, specifies the output file where the output image will be saved to.
+lipstick_color | The new lipstick color in RRGGBBAA notation. If empty, the lipstick filter will not be applied.
+eye_color | The new iris color in RRGGBBAA notation. If empty, the eye color filter will not be applied.
 
+The RRGGBBAA color notation is similar to the one used in CSS, but you don't need to prepend it with the hash sign. The first 6 digits define the values 
+of R, G, B components. The last pair of digits, interpreted as a hexadecimal number, specifies the alpha channel of the color, where 00 represents a fully transparent color and FF represents a fully opaque color. In case the alpha component is omitted, it is assumed to be FF. For example, FF000070 specifies a pure semi-transparent red color. FF0000 and ff0000ff are identical and specify a fully opaque red color.
 
-Sample usage (linux):
+Applying lipstick example:
 ```
-./doscan --input=../images/dragon-medium.jpg 
+./vimaku --input=./images/girl-no-makeup.jpg --lipstick_color=FF000050 
 ```
 
-The application will detect the document using default parameters. The user may adjust the document boundaries by dragging the vertices. 
+This will add a mild red lipstick effect:
 
-![document detection](./assets/detection.jpg)
+![Applying lipstick](./assets/lipstick.jpg)
 
-To rectify the document press any key. 
+For realistic look I recommend alpha values from 30 to 70.
 
-![rectified document](./assets/rectified.jpg)
 
-Pressing *Escape* will quit the application.
+Changing eye color example:
+```
+./vimaku --input=./images/girl7.png --eye_color=2E1902CC  
+```
+
+This will change the iris color to brown:
+![Brown eyes](./assets/eye_color_brown.jpg)
+
+Recommended values of alpha for the eye color filter depend on the original iris color and the intensity of the new color. When eyes are originally light, the alpha values should normally be less than 70.  
+
+Filters can be applied together:
+```
+./vimaku --input=./images/girl5_small.jpg --eye_color=4b724882 --lipstick_color=ff7f5050 --ouput=out.jpg  
+```
+
+This will change the iris color to blue and the lipstick color to orange. The output image will be saved to out.jpg. 
+
+![Blue eyes and orange lipstick](./assets/blue_eyes_and_orange_lipstick.jpg)
+
