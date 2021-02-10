@@ -101,10 +101,10 @@ The program has to be run from the command line. It takes in the path to the ima
 
 ```
 vimaku  --input=<input image file>
-		[--output=<output image file>]
-		[--lipstick_color=<The new lipstick color>]
-		[--eye_color=<The new eye color>]		
-	 	[--help]
+	[--output=<output image file>]
+	[--lipstick_color=<The new lipstick color>]
+	[--eye_color=<The new eye color>]		
+	[--help]
 ```
 
 Parameter    | Meaning 
