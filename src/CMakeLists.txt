@@ -68,7 +68,7 @@ add_custom_command(TARGET vimaku
                      "${PROJECT_SOURCE_DIR}/../models/shape_predictor_68_face_landmarks.dat"
                      "$<TARGET_FILE_DIR:vimaku>")
 	
-# Copy the test file to the output directory
+# Copy test image files to the output directory
 add_custom_command(TARGET vimaku
                    POST_BUILD
                    COMMAND ${CMAKE_COMMAND} -E copy_directory
