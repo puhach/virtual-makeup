@@ -3,3 +3,4 @@ images/*
 !images/*.txt
 dlib
 writeup
+src/build/*
