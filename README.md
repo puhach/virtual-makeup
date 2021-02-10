@@ -149,3 +149,7 @@ This will change the iris color to blue and the lipstick color to orange. The ou
 
 ![Blue eyes and orange lipstick](./assets/blue_eyes_and_orange_lipstick.jpg)
 
+
+## Credits
+
+Images have been downloaded from pinterest.com.
