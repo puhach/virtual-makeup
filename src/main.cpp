@@ -124,7 +124,7 @@ int main(int argc, char* argv[])
 			"{output           |         | If not empty, specifies the file where the output image will be saved to }";
 		
 		cv::CommandLineParser parser(argc, argv, keys);
-		parser.about("Glassify\n(c) Yaroslav Pugach");
+		parser.about("Virtual Makeup\n(c) Yaroslav Pugach");
 
 		if (parser.has("help"))
 		{
